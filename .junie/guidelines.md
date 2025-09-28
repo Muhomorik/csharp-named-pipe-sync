@@ -60,6 +60,30 @@ Explicit prohibitions for non‑Presentation layers:
 - No reliance on UI frameworks or dispatchers for shutdown.
 - No background tasks whose purpose is to end the process.
 
+## Domain events and reactive patterns
+
+- Domain entities
+  - Keep entities free of infrastructure and reactive dependencies.
+  - Do not embed event publishers or observables inside entities.
+  - Entities hold state and invariants only; they do not publish events.
+- Events
+  - Represent meaningful changes as immutable messages.
+  - Place event contracts in a shared, dependency‑free layer where appropriate.
+  - Treat events as intent signals; do not bind them to UI concerns.
+- Application services
+  - Orchestrate use cases and persist state using repositories.
+  - Publish event streams after successful state changes.
+  - Expose observable intent streams for consumers; own the lifecycle and disposal of publishers.
+  - Never terminate the process or interact with UI APIs.
+- Event aggregation
+  - If needed, provide a component that composes multiple event streams into unified observables.
+  - Keep the aggregator free of side effects; only compose and forward signals.
+  - Log errors by logging the exception object.
+- Usage guidance
+  - Higher‑level orchestrators depend on application services rather than repositories when event emission is expected.
+  - Avoid direct mutation of entities from Presentation; route changes through application services to ensure consistent event publication.
+  - Prefer asynchronous APIs with cancellation; avoid blocking the UI thread.
+
 ---
 
 ## 🛠️ Build & Run
@@ -211,6 +235,9 @@ Authoring checklist
 - Are there any shutdown or process termination calls outside the Presentation layer? If yes, replace with an intent signal and handle shutdown in Presentation.
 - Do lower layers expose UI‑agnostic, observable intents rather than performing UI or process actions?
 - Does the Presentation layer own the final decision and mechanism for shutdown via a lifetime service?
+- Are domain entities free of event publishers and observables? If not, move event publication to application services.
+- Do orchestrating components mutate entities directly instead of going through application services? If so, refactor to route changes via services to ensure events are emitted consistently.
+- Do event aggregators only compose and forward streams without side effects, and are errors logged by logging the exception object?
 
 ---
 
