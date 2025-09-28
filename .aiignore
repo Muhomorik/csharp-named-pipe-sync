@@ -1,0 +1,82 @@
+﻿# .aiignore — Files and folders to exclude from AI assistants' context
+# Purpose: keep noisy build artifacts, caches, and large binaries out of the AI context
+# Scope: repository-local; does NOT affect git. Safe to adjust as the project evolves.
+
+# Build outputs (solution-wide)
+[bB]in/
+[oO]bj/
+**/[bB]in/
+**/[oO]bj/
+PublishOutput/
+
+# IDE/Tooling caches
+.vs/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Package/cache directories
+packages/
+.nuget/
+node_modules/
+
+# Logs and temp
+*.log
+logs/
+.temp/
+.tmp/
+
+# Common large/binary artifacts
+*.dll
+*.exe
+*.pdb
+*.cache
+*.zip
+*.7z
+*.rar
+*.tar
+*.gz
+*.tgz
+*.xz
+*.nupkg
+
+# OS clutter
+.DS_Store
+Thumbs.db
+
+# VCS internals
+.git/
+.gitmodules
+.gitignore
+.gitattributes
+
+# App publish outputs (explicit)
+NamedPipeSync.Client/bin/
+NamedPipeSync.Server/bin/
+NamedPipeSync.Common/bin/
+NamedPipeSync.Client/obj/
+NamedPipeSync.Server/obj/
+NamedPipeSync.Common/obj/
+
+# Images and design assets that are not needed for reasoning (keep source SVGs)
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.bmp
+# Keep vector sources for reasoning
+!**/*.svg
+
+# Keep documentation and source code visible to AI
+!**/*.cs
+!**/*.csproj
+!**/*.sln
+!README.md
+!docs/**
+!.junie/**
+
+
+# Project-local ideas and design scratch; exclude from AI context
+ideas/

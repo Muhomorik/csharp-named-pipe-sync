@@ -1,0 +1,27 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <rect width="100%" height="100%" fill="#ffffff" />
+  <text x="20" y="28" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#333">Compact: margin=32, gap=24, square=304, T/B=196</text>
+
+  <!-- Row 0 -->
+  <rect x="32"  y="196" width="304" height="304" fill="#cfe8ff" fill-opacity="0.6" stroke="#2b6fb3" stroke-width="3" />
+  <text x="184" y="348" font-family="Arial" font-size="48" fill="#133b66" text-anchor="middle" alignment-baseline="middle">1</text>
+
+  <rect x="360" y="196" width="304" height="304" fill="#dff7da" fill-opacity="0.6" stroke="#2b8f3b" stroke-width="3" />
+  <text x="512" y="348" font-family="Arial" font-size="48" fill="#1b5a2b" text-anchor="middle" alignment-baseline="middle">2</text>
+
+  <rect x="688" y="196" width="304" height="304" fill="#fff1c7" fill-opacity="0.6" stroke="#b37800" stroke-width="3" />
+  <text x="840" y="348" font-family="Arial" font-size="48" fill="#4d3400" text-anchor="middle" alignment-baseline="middle">3</text>
+
+  <!-- Row 1 -->
+  <rect x="32"  y="524" width="304" height="304" fill="#ffdce6" fill-opacity="0.6" stroke="#b32b66" stroke-width="3" />
+  <text x="184" y="676" font-family="Arial" font-size="48" fill="#4d1633" text-anchor="middle" alignment-baseline="middle">4</text>
+
+  <rect x="360" y="524" width="304" height="304" fill="#e8e8ff" fill-opacity="0.6" stroke="#3432b3" stroke-width="3" />
+  <text x="512" y="676" font-family="Arial" font-size="48" fill="#1b1b66" text-anchor="middle" alignment-baseline="middle">5</text>
+
+  <rect x="688" y="524" width="304" height="304" fill="#e8fff2" fill-opacity="0.6" stroke="#2b9f7f" stroke-width="3" />
+  <text x="840" y="676" font-family="Arial" font-size="48" fill="#143f2f" text-anchor="middle" alignment-baseline="middle">6</text>
+
+  <rect x="1" y="1" width="1022" height="1022" fill="none" stroke="#cccccc" stroke-width="2" />
+</svg>

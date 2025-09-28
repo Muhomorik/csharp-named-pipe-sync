@@ -1,0 +1,31 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- Background -->
+  <rect width="100%" height="100%" fill="#f7f7f8" />
+  <!-- Grid label -->
+  <text x="20" y="28" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#333">Layout: gap=32, square=288, margins L/R=48, T/B=208</text>
+
+  <!-- Draw squares -->
+  <!-- Row 0 -->
+  <rect x="48"  y="208" width="288" height="288" fill="#cfe8ff" fill-opacity="0.6" stroke="#2b6fb3" stroke-width="3" />
+  <text x="192" y="360" font-family="Arial" font-size="48" fill="#133b66" text-anchor="middle" alignment-baseline="middle">1</text>
+
+  <rect x="368" y="208" width="288" height="288" fill="#dff7da" fill-opacity="0.6" stroke="#2b8f3b" stroke-width="3" />
+  <text x="512" y="360" font-family="Arial" font-size="48" fill="#1b5a2b" text-anchor="middle" alignment-baseline="middle">2</text>
+
+  <rect x="688" y="208" width="288" height="288" fill="#fff1c7" fill-opacity="0.6" stroke="#b37800" stroke-width="3" />
+  <text x="832" y="360" font-family="Arial" font-size="48" fill="#4d3400" text-anchor="middle" alignment-baseline="middle">3</text>
+
+  <!-- Row 1 -->
+  <rect x="48"  y="528" width="288" height="288" fill="#ffdce6" fill-opacity="0.6" stroke="#b32b66" stroke-width="3" />
+  <text x="192" y="680" font-family="Arial" font-size="48" fill="#4d1633" text-anchor="middle" alignment-baseline="middle">4</text>
+
+  <rect x="368" y="528" width="288" height="288" fill="#e8e8ff" fill-opacity="0.6" stroke="#3432b3" stroke-width="3" />
+  <text x="512" y="680" font-family="Arial" font-size="48" fill="#1b1b66" text-anchor="middle" alignment-baseline="middle">5</text>
+
+  <rect x="688" y="528" width="288" height="288" fill="#e8fff2" fill-opacity="0.6" stroke="#2b9f7f" stroke-width="3" />
+  <text x="832" y="680" font-family="Arial" font-size="48" fill="#143f2f" text-anchor="middle" alignment-baseline="middle">6</text>
+
+  <!-- Outline of canvas -->
+  <rect x="1" y="1" width="1022" height="1022" fill="none" stroke="#cccccc" stroke-width="2" />
+</svg>
