@@ -1,0 +1,1 @@
+# csharp-named-pipe-sync
