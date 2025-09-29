@@ -229,6 +229,19 @@ Authoring checklist
 - For async methods, did you document cancellation and context-capture behavior?
 - For WPF-facing APIs, did you specify Dispatcher/UI-thread requirements?
 - Is the documentation self-contained so readers do not need to open implementations?
+- For all DTOs, entities, and aggregates, did you add a System.Diagnostics.DebuggerDisplay attribute that concisely shows key identity/state for easier debugging? Example:
+
+```csharp
+using System.Diagnostics;
+
+[DebuggerDisplay("{Id}: {Name} ({Status})")]
+public sealed class OrderDto
+{
+    public Guid Id { get; init; }
+    public string Name { get; init; } = string.Empty;
+    public string Status { get; init; } = string.Empty;
+}
+```
 
 ## Code review checklist additions
 
@@ -238,6 +251,7 @@ Authoring checklist
 - Are domain entities free of event publishers and observables? If not, move event publication to application services.
 - Do orchestrating components mutate entities directly instead of going through application services? If so, refactor to route changes via services to ensure events are emitted consistently.
 - Do event aggregators only compose and forward streams without side effects, and are errors logged by logging the exception object?
+- Do DTOs, entities, and aggregates define a helpful [DebuggerDisplay] to improve debugging clarity?
 
 ---
 
