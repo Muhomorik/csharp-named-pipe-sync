@@ -54,17 +54,11 @@ public class MainWindowServerViewModel : ViewModelBase
             {
                 var client = _clients.GetOrCreate(change.ClientId);
                 client.SetConnection(change.State);
+                // Subscribe to client coordinate changes to keep UI in sync
+                client.CoordinatesChanged
+                    .ObserveOn(_uiScheduler)
+                    .Subscribe(_ => UpsertClientState(client));
                 UpsertClientState(client);
-            });
-
-        _clients.CoordinatesChanged
-            .ObserveOn(_uiScheduler)
-            .Subscribe(evt =>
-            {
-                if (_clients.TryGet(evt.ClientId, out var client))
-                {
-                    UpsertClientState(client);
-                }
             });
 
         StartClientCommand = new AsyncCommand<int>(StartClientAsync);
@@ -134,9 +128,14 @@ public class MainWindowServerViewModel : ViewModelBase
 
     private void OnWindowLoaded()
     {
-        _clients.ReadClients();
+        // Seed clients based on available start checkpoints (players == checkpoints)
+        _clients.ReadClients(Checkpoints.Start.Count);
         foreach (var c in _clients.All)
         {
+            // subscribe to coordinate changes per client
+            c.CoordinatesChanged
+                .ObserveOn(_uiScheduler)
+                .Subscribe(_ => UpsertClientState(c));
             UpsertClientState(c);
         }
 
