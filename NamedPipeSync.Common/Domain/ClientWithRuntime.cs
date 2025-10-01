@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Linq;
 using NamedPipeSync.Common.Domain;
 using NamedPipeSync.Common.Infrastructure.Protocol;
 using NamedPipeSync.Common.Application;
@@ -97,4 +98,61 @@ public sealed class ClientWithRuntime
     ///     otherwise, returns <see cref="MovingToCheckpoint"/>.
     /// </summary>
     public Checkpoint CurrentCheckpoint => IsOnCheckpoint ? LastCheckpoint : MovingToCheckpoint;
+
+    // Encapsulated state transition helpers to avoid external direct property sets
+
+    /// <summary>
+    /// Initializes the position to the starting checkpoint if coordinates are unset (0,0).
+    /// Sets IsOnCheckpoint to true. Returns true if initialization occurred.
+    /// </summary>
+    public bool InitializePositionIfNeeded()
+    {
+        if (Coordinates.X == 0 && Coordinates.Y == 0)
+        {
+            Coordinates = LastCheckpoint.Location;
+            IsOnCheckpoint = true;
+            return true;
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Updates the runtime state to reflect that the client has arrived at the specified checkpoint.
+    /// Sets coordinates to the checkpoint location, updates LastCheckpoint and IsOnCheckpoint, and advances MovingToCheckpoint to the next checkpoint in the ring.
+    /// </summary>
+    /// <param name="target">The checkpoint that was reached.</param>
+    public void ArriveAt(Checkpoint target)
+    {
+        Coordinates = target.Location;
+        LastCheckpoint = target;
+        IsOnCheckpoint = true;
+        MovingToCheckpoint = NextCheckpointAfter(target);
+    }
+
+    /// <summary>
+    /// Advances coordinates by up to the provided step toward the specified target checkpoint and clears IsOnCheckpoint.
+    /// Returns the new coordinates.
+    /// </summary>
+    public Coordinate MoveStepTowards(Checkpoint target, double step)
+    {
+        var current = Coordinates;
+        var dx = target.Location.X - current.X;
+        var dy = target.Location.Y - current.Y;
+        var distance = Math.Sqrt(dx * dx + dy * dy);
+        var actual = Math.Min(step, distance);
+        var nx = current.X + actual * (dx / (distance == 0 ? 1 : distance));
+        var ny = current.Y + actual * (dy / (distance == 0 ? 1 : distance));
+        var next = new Coordinate(nx, ny);
+        Coordinates = next;
+        IsOnCheckpoint = false;
+        return next;
+    }
+
+    private static Checkpoint NextCheckpointAfter(Checkpoint current)
+    {
+        var cps = Checkpoints.Start;
+        var idx = Math.Max(0, cps.ToList().FindIndex(cp => cp.Id == current.Id));
+        var nextIdx = (idx + 1) % cps.Count;
+        return cps[nextIdx];
+    }
 }
