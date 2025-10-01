@@ -97,6 +97,10 @@ public partial class App : Application
             .As<IClientDirectory>()
             .SingleInstance();
 
+        builder.RegisterType<ClientWithRuntimeEventDispatcher>()
+            .As<IClientWithRuntimeEventDispatcher>()
+            .SingleInstance();
+
         builder.RegisterType<SimpleRingCoordinatesCalculator>()
             .As<ICoordinatesCalculator>()
             .SingleInstance();
