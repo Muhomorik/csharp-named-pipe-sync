@@ -200,6 +200,20 @@ catch (Exception ex)
 }
 ```
 
+- Defer message formatting for performance: do not use string interpolation ($"...") or string.Format when logging. Pass the format string and arguments to the NLog method so formatting is deferred until the message is actually written.
+
+```csharp
+// BAD — eager formatting with interpolation
+_logger.Trace($"TryGet id={id.Id} found={found}");
+
+// BAD — eager formatting with string.Format
+_logger.Trace(string.Format("TryGet id={0} found={1}", id.Id, found));
+
+// GOOD — defer formatting by passing arguments
+_logger.Trace("TryGet id={0} found={1}", id.Id, found);
+
+```
+
 - When creating a new model or service, always add the logger as the first constructor parameter.
   - Never use Microsoft.Extensions.Logging.ILogger.
   - Always use NLog.ILogger.
