@@ -243,6 +243,39 @@ public sealed class OrderDto
 }
 ```
 
+---
+
+## Entity design and aggregate updates
+
+Entity
+
+- Strongly typed ids (for example, OrderId type) improve type-safety and readability.
+
+Encapsulate updates
+
+- Prevent violating invariants (for example, an Order total mismatch, or negative stock).
+- Ensure all state changes go through domain rules.
+
+How to update an entity inside an aggregate (patterns)
+
+Preferred approach: Tell the aggregate what to do (tell, don’t ask)
+
+- Example: order.AddItem(productId, qty) rather than loading item and changing fields externally.
+
+Steps for updating
+
+- Load aggregate root by id from the repository.
+- Call a behavior method on the aggregate root that performs the update (internal entities mutated inside).
+- Validate invariants inside the aggregate; throw domain exceptions or return Result if invalid.
+- Save the aggregate via repository (persist whole aggregate).
+
+Common update antipatterns (to avoid)
+
+- Modifying child entities directly from application code (bypasses invariants).
+- Exposing setters on aggregate root public properties for arbitrary mutation.
+- Loading multiple aggregates and directly modifying them in a single transaction to maintain cross-aggregate invariants (instead use domain events or sagas/process managers).
+
+
 ## Code review checklist additions
 
 - Are there any shutdown or process termination calls outside the Presentation layer? If yes, replace with an intent signal and handle shutdown in Presentation.
