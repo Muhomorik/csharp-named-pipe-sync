@@ -297,8 +297,31 @@ Common update antipatterns (to avoid)
 - Exposing setters on aggregate root public properties for arbitrary mutation.
 - Loading multiple aggregates and directly modifying them in a single transaction to maintain cross-aggregate invariants (instead use domain events or sagas/process managers).
 
+---
 
-## Code review checklist additions
+## IDisposable and Reactive Extensions (Rx) subscription management
+
+When working with Reactive Extensions (Rx) subscriptions and disposable resources:
+
+**IDisposable implementation**
+
+- Always implement IDisposable when a class manages subscriptions, event handlers, or other disposable resources.
+- Use CompositeDisposable to manage multiple subscriptions in a single disposable container.
+- Dispose of the CompositeDisposable in the Dispose method to ensure all subscriptions are properly cleaned up.
+
+**CompositeDisposable usage patterns**
+
+- Declare CompositeDisposable as a private readonly field, typically named `_disposables`.
+- Add all Rx subscriptions to the CompositeDisposable using the `.Add()` method or the disposable indexer.
+- Call `_disposables.Dispose()` in the class's Dispose method to clean up all subscriptions at once.
+
+**Subscription lifecycle**
+
+- Create subscriptions in constructors or initialization methods and immediately add them to CompositeDisposable.
+- Use `ObserveOn(_uiScheduler)` for UI-bound subscriptions to ensure proper thread marshaling.
+- Prefer explicit disposal over relying on garbage collection for subscription cleanup.
+
+Example pattern:
 
 - Are there any shutdown or process termination calls outside the Presentation layer? If yes, replace with an intent signal and handle shutdown in Presentation.
 - Do lower layers expose UI‑agnostic, observable intents rather than performing UI or process actions?
@@ -307,6 +330,9 @@ Common update antipatterns (to avoid)
 - Do orchestrating components mutate entities directly instead of going through application services? If so, refactor to route changes via services to ensure events are emitted consistently.
 - Do event aggregators only compose and forward streams without side effects, and are errors logged by logging the exception object?
 - Do DTOs, entities, and aggregates define a helpful [DebuggerDisplay] to improve debugging clarity?
+- Does the class implement IDisposable when managing Rx subscriptions or disposable resources?
+- Are all Rx subscriptions managed through CompositeDisposable for proper cleanup?
+- Is CompositeDisposable properly disposed in the Dispose method?
 
 ---
 
