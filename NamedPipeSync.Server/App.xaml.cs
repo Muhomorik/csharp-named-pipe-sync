@@ -76,10 +76,17 @@ public partial class App : Application
             };
         });
 
-        // Register all ViewModels automatically (logger resolves automatically)
+        // Register all ViewModels automatically (logger resolves automatically).
+        // Ensure every ViewModel gets DispatcherScheduler.Current injected for constructor parameters of type IScheduler
+        // so they can marshal to the UI thread. Tests can still override IScheduler by registering different
+        // components or using explicit registrations that take precedence.
         builder.RegisterAssemblyTypes(Assembly.GetExecutingAssembly())
             .Where(t => t.Name.EndsWith("ViewModel"))
             .AsSelf()
+            .WithParameter(
+                new ResolvedParameter(
+                    (pi, ctx) => pi.ParameterType == typeof(IScheduler),
+                    (pi, ctx) => DispatcherScheduler.Current))
             .InstancePerDependency();
 
         // Determine client executable path once and whether it exists on disk.
