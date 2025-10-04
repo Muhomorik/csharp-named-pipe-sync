@@ -26,8 +26,9 @@ public sealed class SimpleRingCoordinatesCalculator : ICoordinatesCalculator
             return client.Coordinates;
         }
 
-        // Determine current target checkpoint
-        var target = client.CurrentCheckpoint;
+        // Determine the checkpoint the client is currently moving toward.
+        // Use MovingToCheckpoint so a client that is on a checkpoint will start moving to the next one.
+        var target = client.MovingToCheckpoint;
         var current = client.Coordinates;
         var dx = target.Location.X - current.X;
         var dy = target.Location.Y - current.Y;
