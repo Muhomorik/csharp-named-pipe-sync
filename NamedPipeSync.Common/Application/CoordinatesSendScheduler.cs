@@ -193,7 +193,7 @@ public sealed class CoordinatesSendScheduler : ICoordinatesSendScheduler, IDispo
                 }
                 catch (Exception ex)
                 {
-                    _logger.Error(ex);
+                    _logger.Debug(ex);
                 }
             }
 
