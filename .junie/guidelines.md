@@ -180,6 +180,19 @@ Threading and WPF specifics
 - If a member must be called from the UI thread, state it explicitly and explain why; specify whether it uses Dispatcher.
 - For async methods, state whether they capture context (ConfigureAwait), how CancellationToken is honored, and what happens on cancellation (e.g., OperationCanceledException vs. partial work).
 
+Authoring checklist
+
+- Did you document all parameters with nullability and ranges?
+- Did you clearly state return value nullability and ownership?
+- Did you list every exception and its trigger condition?
+- Did you explain relationships and expected usage with other components?
+- Is terminology consistent with Domain/Application/Infrastructure layers?
+- For async methods, did you document cancellation and context-capture behavior?
+- For WPF-facing APIs, did you specify Dispatcher/UI-thread requirements?
+- Is the documentation self-contained so readers do not need to open implementations?
+- For all DTOs, entities, and aggregates, did you add a System.Diagnostics.DebuggerDisplay attribute that concisely shows key identity/state for easier debugging? Example:
+
+
 ## Logging and DI conventions
 
 - When logging exceptions, do not write a custom message; log the exception object directly.
@@ -233,17 +246,6 @@ public sealed class MyModel : IMyModel
 }
 ```
 
-Authoring checklist
-
-- Did you document all parameters with nullability and ranges?
-- Did you clearly state return value nullability and ownership?
-- Did you list every exception and its trigger condition?
-- Did you explain relationships and expected usage with other components?
-- Is terminology consistent with Domain/Application/Infrastructure layers?
-- For async methods, did you document cancellation and context-capture behavior?
-- For WPF-facing APIs, did you specify Dispatcher/UI-thread requirements?
-- Is the documentation self-contained so readers do not need to open implementations?
-- For all DTOs, entities, and aggregates, did you add a System.Diagnostics.DebuggerDisplay attribute that concisely shows key identity/state for easier debugging? Example:
 
 ```csharp
 using System.Diagnostics;
@@ -256,6 +258,12 @@ public sealed class OrderDto
     public string Status { get; init; } = string.Empty;
 }
 ```
+
+Authoring checklist
+
+- Is ILogger the first parameter in all constructors?
+- Microsoft.Extensions.Logging.ILogger is never used.
+- NLog.ILogger is always used.
 
 ---
 
