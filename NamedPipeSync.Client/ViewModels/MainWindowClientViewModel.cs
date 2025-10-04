@@ -99,6 +99,23 @@ public class MainWindowClientViewModel : ViewModelBase, IDisposable
         set => SetProperty(ref _title, value, nameof(Title));
     }
 
+    // Desired content/client size exposed to the ViewModel (client area width/height).
+    // These represent the size of the content area (the Grid inside the window).
+    private double _windowContentWidth = 288;
+    private double _windowContentHeight = 288;
+
+    public double WindowContentWidth
+    {
+        get => _windowContentWidth;
+        set => SetProperty(ref _windowContentWidth, value, nameof(WindowContentWidth));
+    }
+
+    public double WindowContentHeight
+    {
+        get => _windowContentHeight;
+        set => SetProperty(ref _windowContentHeight, value, nameof(WindowContentHeight));
+    }
+
     public void Dispose() => _disposables.Dispose();
 
     private void WireUpObservables()

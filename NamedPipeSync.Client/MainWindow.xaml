@@ -8,8 +8,7 @@
                  xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
                  mc:Ignorable="d"
                  d:DataContext="{d:DesignInstance Type=viewModels:MainWindowClientViewModel, IsDesignTimeCreatable=True}"
-                 Title="{Binding Title}"
-                 Height="450" Width="800">
+                 Title="{Binding Title}">
     <dxmvvm:Interaction.Triggers>
         <dxmvvm:EventToCommand EventName="Loaded" Command="{Binding LoadedCommand}" />
     </dxmvvm:Interaction.Triggers>
@@ -27,7 +26,7 @@
             <TextBlock x:Name="ReadyText"
                        Text="READY: Client"
                        Foreground="Orange"
-                       FontSize="72"
+                       FontSize="40"
                        FontWeight="Bold"
                        HorizontalAlignment="Center"
                        TextAlignment="Center" />
