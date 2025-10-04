@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Reactive.Concurrency;
+using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Windows.Input;
 
@@ -11,7 +12,7 @@ using NamedPipeSync.Common.Application;
 using NamedPipeSync.Common.Domain;
 using NamedPipeSync.Common.Domain.Events;
 using NamedPipeSync.Common.Infrastructure.Protocol;
-using NamedPipeSync.Server.Services;
+using NamedPipeSync.Server.Models;
 
 using NLog;
 
@@ -19,88 +20,71 @@ namespace NamedPipeSync.Server.ViewModels;
 
 // TODO: update status bat if client exe is not found.
 
-public class MainWindowServerViewModel : ViewModelBase
+public class MainWindowServerViewModel : ViewModelBase, IDisposable
 {
-    private readonly IClientWithRuntimeRepository _repository;
-        private readonly IClientWithRuntimeEventDispatcher _events;
-    private readonly IClientProcessLauncher _launcher;
     private readonly ILogger _logger;
-    private readonly INamedPipeServer _server;
     private readonly IScheduler _uiScheduler;
+    private readonly IMainWindowServerModel _model;
+    private readonly CompositeDisposable _disposables = new();
 
     private string _title = "Server";
-
 
     /// <summary>
     /// Used by DI container to create type.
     /// </summary>
     /// <param name="logger"></param>
-    /// <param name="server"></param>
-    /// <param name="repository"></param>
-    /// <param name="events"></param>
-    /// <param name="launcher"></param>
+    /// <param name="model"></param>
     /// <exception cref="ArgumentNullException"></exception>
     [UsedImplicitly]
     public MainWindowServerViewModel(
         ILogger logger,
-        INamedPipeServer server,
-        IClientWithRuntimeRepository repository,
-        IClientWithRuntimeEventDispatcher events,
-        IClientProcessLauncher launcher)
+        IMainWindowServerModel model)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _server = server ?? throw new ArgumentNullException(nameof(server));
-        _repository = repository ?? throw new ArgumentNullException(nameof(repository));
-        _events = events ?? throw new ArgumentNullException(nameof(events));
-        _launcher = launcher ?? throw new ArgumentNullException(nameof(launcher));
+        _model = model ?? throw new ArgumentNullException(nameof(model));
         _uiScheduler = DispatcherScheduler.Current;
 
         Title = "NamedPipeSync Server";
 
         // React to connection changes to keep UI connection state in sync and ensure repository has the client entry
-        _server.ConnectionChanged
-            .ObserveOn(_uiScheduler)
-            .Subscribe(change =>
-            {
-                if (!_repository.TryGet(change.ClientId, out var client))
+        _disposables.Add(
+            _model.ConnectionChanged
+                .ObserveOn(_uiScheduler)
+                .Subscribe(change =>
                 {
-                    // Seed using checkpoint with same id when available, otherwise use first checkpoint
-                    var cp = Checkpoints.Start.FirstOrDefault(c => c.Id == change.ClientId.Id);
-                    if (cp.Id == 0 && Checkpoints.Start.Count > 0)
+                    _model.EnsureClientEntryOnConnectionChange(change.ClientId, change.State);
+                    if (_model.TryGet(change.ClientId, out var client))
                     {
-                        cp = Checkpoints.Start[0];
+                        UpsertClientState(client!);
                     }
-                    client = new ClientWithRuntime(change.ClientId, cp);
-                }
-                client!.Connection = change.State;
-                _repository.Update(client);
-                UpsertClientState(client);
-            });
+                }));
 
         // Subscribe to domain events by type
-        _events.Events
-            .ObserveOn(_uiScheduler)
-            .OfType<CoordinatesUpdated>()
-            .Subscribe(evt =>
-            {
-                if (_repository.TryGet(evt.ClientId, out var client))
+        _disposables.Add(
+            _model.Events
+                .ObserveOn(_uiScheduler)
+                .OfType<CoordinatesUpdated>()
+                .Subscribe(evt =>
                 {
-                    // Client runtime state is already updated by calculators/schedulers; reflect it in UI
-                    UpsertClientState(client!);
-                }
-            });
+                    if (_model.TryGet(evt.ClientId, out var client))
+                    {
+                        // Client runtime state is already updated by calculators/schedulers; reflect it in UI
+                        UpsertClientState(client!);
+                    }
+                }));
 
-        _events.Events
-            .ObserveOn(_uiScheduler)
-            .OfType<CheckpointReached>()
-            .Subscribe(evt =>
-            {
-                // Currently, just refresh UI from repository snapshot
-                if (_repository.TryGet(evt.ClientId, out var client))
+        _disposables.Add(
+            _model.Events
+                .ObserveOn(_uiScheduler)
+                .OfType<CheckpointReached>()
+                .Subscribe(evt =>
                 {
-                    UpsertClientState(client!);
-                }
-            });
+                    // Currently, just refresh UI from repository snapshot
+                    if (_model.TryGet(evt.ClientId, out var client))
+                    {
+                        UpsertClientState(client!);
+                    }
+                }));
 
         StartClientCommand = new AsyncCommand<int>(StartClientAsync);
         StartAllCommand = new AsyncCommand(StartAllAsync);
@@ -116,10 +100,6 @@ public class MainWindowServerViewModel : ViewModelBase
     public MainWindowServerViewModel()
     {
         _logger = LogManager.GetCurrentClassLogger();
-        _server = null!;
-        _repository = null!;
-        _events = null!;
-        _launcher = null!;
         _uiScheduler = DispatcherScheduler.Current;
 
         // Initialize commands with harmless placeholders so bindings can safely call them.
@@ -171,23 +151,10 @@ public class MainWindowServerViewModel : ViewModelBase
     private void OnWindowLoaded()
     {
         // Seed repository with clients based on available start checkpoints (players == checkpoints)
-        foreach (var cp in Checkpoints.Start)
-        {
-            var id = new ClientId(cp.Id);
-            if (!_repository.TryGet(id, out var existing))
-            {
-                var client = new ClientWithRuntime(id, cp)
-                {
-                    Coordinates = cp.Location,
-                    Connection = ConnectionState.Disconnected,
-                    IsOnCheckpoint = true
-                };
-                _repository.Update(client);
-            }
-        }
+        _model.SeedMissingClients();
 
-        // Initialize UI from repository snapshot
-        var all = _repository.GetAll();
+        // Initialize UI from a repository snapshot
+        var all = _model.GetAllClients();
         foreach (var c in all)
         {
             UpsertClientState(c);
@@ -195,7 +162,7 @@ public class MainWindowServerViewModel : ViewModelBase
 
         RaisePropertyChanged(nameof(CanStartAll));
 
-        _server.Start();
+        _model.StartServer();
     }
 
     private void UpsertClientState(ClientWithRuntime client)
@@ -225,14 +192,14 @@ public class MainWindowServerViewModel : ViewModelBase
 
     private Task StartClientAsync(int id)
     {
-        _launcher.StartClient(new ClientId(id));
+        _model.StartClient(new ClientId(id));
         return Task.CompletedTask;
     }
 
     private Task StartAllAsync()
     {
         var ids = Clients.Select(c => new ClientId(c.Id));
-        return _launcher.StartManyAsync(ids);
+        return _model.StartManyAsync(ids);
     }
 
     private Task ToggleClientAsync(int id)
@@ -255,13 +222,16 @@ public class MainWindowServerViewModel : ViewModelBase
     {
         try
         {
-            var ids = _server.ConnectedClientIds;
-            var tasks = ids.Select(id => _server.SendCloseRequestAsync(id));
-            await Task.WhenAll(tasks);
+            await _model.CloseAllClientsAsync();
         }
         catch (Exception ex)
         {
-            _logger.Error(ex, "CloseAllClientsAsync failed");
+            _logger.Error(ex);
         }
+    }
+
+    public void Dispose()
+    {
+        _disposables.Dispose();
     }
 }
