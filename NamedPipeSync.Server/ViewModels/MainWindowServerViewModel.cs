@@ -70,7 +70,7 @@ public class MainWindowServerViewModel : ViewModelBase, IDisposable
             _model.Events
                 .OfType<CoordinatesUpdated>()
                 // Reduce UI churn from high-frequency updates; keep UI smooth
-                .Sample(TimeSpan.FromMilliseconds(100))
+                //.Sample(TimeSpan.FromMilliseconds(100))
                 .ObserveOn(_uiScheduler)
                 .Subscribe(evt =>
                 {
