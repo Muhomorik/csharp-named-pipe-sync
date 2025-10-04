@@ -28,6 +28,7 @@ public class MainWindowServerViewModel : ViewModelBase, IDisposable
     private readonly CompositeDisposable _disposables = new();
 
     private string _title = "Server";
+    private readonly bool _isClientExecutableMissing;
 
     /// <summary>
     /// Used by DI container to create type.
@@ -35,16 +36,19 @@ public class MainWindowServerViewModel : ViewModelBase, IDisposable
     /// <param name="logger"></param>
     /// <param name="uiScheduler">Scheduler used to marshal events to the UI thread (injected for testability)</param>
     /// <param name="model"></param>
+    /// <param name="isClientExecutableMissing">True when the configured client executable path does not exist on disk.</param>
     /// <exception cref="ArgumentNullException"></exception>
     [UsedImplicitly]
     public MainWindowServerViewModel(
         ILogger logger,
         IScheduler uiScheduler,
-        IMainWindowServerModel model)
+        IMainWindowServerModel model,
+        bool isClientExecutableMissing)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _model = model ?? throw new ArgumentNullException(nameof(model));
         _uiScheduler = uiScheduler ?? throw new ArgumentNullException(nameof(uiScheduler));
+        _isClientExecutableMissing = isClientExecutableMissing;
 
         Title = "NamedPipeSync Server";
 
@@ -104,6 +108,7 @@ public class MainWindowServerViewModel : ViewModelBase, IDisposable
         _logger = LogManager.GetCurrentClassLogger();
         _uiScheduler = DispatcherScheduler.Current;
         _model = null!;
+        _isClientExecutableMissing = false;
 
         // Initialize commands with harmless placeholders so bindings can safely call them.
         StartClientCommand = new AsyncCommand<int>(_ => Task.CompletedTask);
@@ -142,6 +147,13 @@ public class MainWindowServerViewModel : ViewModelBase, IDisposable
 
     // New command for per-row actions
     public ICommand ToggleClientCommand { get; }
+
+    /// <summary>
+    /// Message shown in the status bar. When the client executable is missing this will contain a warning.
+    /// </summary>
+    public string StatusBarMessage => _isClientExecutableMissing
+        ? "Warning: client executable not found"
+        : "Tip: ¯\\_(ツ)_/¯";
 
     public bool CanStartAll => Clients.Any(c => c.Connection != ConnectionState.Connected);
 

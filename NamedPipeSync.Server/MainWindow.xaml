@@ -193,7 +193,8 @@
             </StatusBarItem>
             <Separator />
             <StatusBarItem>
-                <TextBlock Text="Tip: ¯\_(ツ)_/¯" />
+                <!-- Bind to ViewModel's StatusBarMessage which will show a warning when client exe is missing -->
+                <TextBlock Text="{Binding StatusBarMessage}" />
             </StatusBarItem>
         </StatusBar>
     </Grid>

@@ -82,12 +82,18 @@ public partial class App : Application
             .AsSelf()
             .InstancePerDependency();
 
+        // Determine client executable path once and whether it exists on disk.
+        var clientExecutablePath = GetClientExecutablePath();
+        var clientExecutableMissing = !File.Exists(clientExecutablePath);
+
         // Override registration for MainWindowServerViewModel so we can supply the UI scheduler explicitly
+        // and inform it whether the client executable is present on disk.
         // This ensures the viewmodel receives DispatcherScheduler.Current for UI marshalling while the
         // global IScheduler registration can remain TaskPoolScheduler.Default for background work.
         builder.RegisterType<MainWindowServerViewModel>()
             .AsSelf()
             .WithParameter(new TypedParameter(typeof(IScheduler), DispatcherScheduler.Current))
+            .WithParameter(new TypedParameter(typeof(bool), clientExecutableMissing))
             .InstancePerDependency();
 
         // Register Views
@@ -117,7 +123,7 @@ public partial class App : Application
 
         // Client launcher (supply the client exe path)
         builder.Register(ctx => new ClientProcessLauncher(
-            GetClientExecutablePath()
+            clientExecutablePath
         )).As<IClientProcessLauncher>().SingleInstance();
 
         // Fallback: Register all types from executing assembly.
