@@ -42,9 +42,6 @@ public partial class App : Application
         // Create application-wide lifetime scope
         _applicationScope = _container.BeginLifetimeScope();
 
-        // Start broadcaster
-        var broadcaster = _applicationScope.Resolve<ICoordinateBroadcaster>();
-        broadcaster.Start();
 
         // Create and show the main window
         var mainWindow = _applicationScope.Resolve<MainWindow>();
