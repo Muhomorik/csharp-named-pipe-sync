@@ -82,6 +82,14 @@ public partial class App : Application
             .AsSelf()
             .InstancePerDependency();
 
+        // Override registration for MainWindowServerViewModel so we can supply the UI scheduler explicitly
+        // This ensures the viewmodel receives DispatcherScheduler.Current for UI marshalling while the
+        // global IScheduler registration can remain TaskPoolScheduler.Default for background work.
+        builder.RegisterType<MainWindowServerViewModel>()
+            .AsSelf()
+            .WithParameter(new TypedParameter(typeof(IScheduler), DispatcherScheduler.Current))
+            .InstancePerDependency();
+
         // Register Views
         builder.RegisterType<MainWindow>();
 
@@ -106,17 +114,6 @@ public partial class App : Application
         // IScheduler for Rx: production uses TaskPoolScheduler; tests can override
         builder.RegisterInstance(TaskPoolScheduler.Default)
             .As<IScheduler>();
-
-        // Broadcaster requires a way to fetch current coords snapshot
-        //builder.Register(ctx =>
-        //{
-        //    var dir = ctx.Resolve<IClientDirectory>();
-        //    return new CoordinateBroadcaster(
-        //        ctx.Resolve<INamedPipeServer>(),
-        //        ctx.Resolve<ICoordinatesCalculator>(),
-        //        ctx.Resolve<IScheduler>()
-        //    );
-        //}).As<ICoordinateBroadcaster>().SingleInstance();
 
         // Client launcher (supply the client exe path)
         builder.Register(ctx => new ClientProcessLauncher(

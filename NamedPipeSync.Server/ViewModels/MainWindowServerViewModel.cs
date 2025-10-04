@@ -33,16 +33,18 @@ public class MainWindowServerViewModel : ViewModelBase, IDisposable
     /// Used by DI container to create type.
     /// </summary>
     /// <param name="logger"></param>
+    /// <param name="uiScheduler">Scheduler used to marshal events to the UI thread (injected for testability)</param>
     /// <param name="model"></param>
     /// <exception cref="ArgumentNullException"></exception>
     [UsedImplicitly]
     public MainWindowServerViewModel(
         ILogger logger,
+        IScheduler uiScheduler,
         IMainWindowServerModel model)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _model = model ?? throw new ArgumentNullException(nameof(model));
-        _uiScheduler = DispatcherScheduler.Current;
+        _uiScheduler = uiScheduler ?? throw new ArgumentNullException(nameof(uiScheduler));
 
         Title = "NamedPipeSync Server";
 
@@ -101,6 +103,7 @@ public class MainWindowServerViewModel : ViewModelBase, IDisposable
     {
         _logger = LogManager.GetCurrentClassLogger();
         _uiScheduler = DispatcherScheduler.Current;
+        _model = null!;
 
         // Initialize commands with harmless placeholders so bindings can safely call them.
         StartClientCommand = new AsyncCommand<int>(_ => Task.CompletedTask);
