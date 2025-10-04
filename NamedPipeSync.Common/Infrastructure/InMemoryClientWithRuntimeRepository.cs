@@ -25,6 +25,23 @@ public sealed class InMemoryClientWithRuntimeRepository : IClientWithRuntimeRepo
 
     public IReadOnlyList<ClientWithRuntime> GetAll()
     {
+        // If the map is empty, seed it from the configured checkpoints so callers
+        // (e.g. the server model) don't need to duplicate checkpoint seeding logic.
+        if (_map.IsEmpty)
+        {
+            foreach (var cp in Checkpoints.Start)
+            {
+                var id = new ClientId(cp.Id);
+                var client = new ClientWithRuntime(id, cp)
+                {
+                    Coordinates = cp.Location,
+                    Connection = ConnectionState.Disconnected,
+                    IsOnCheckpoint = true
+                };
+                _map.TryAdd(id.Id, client);
+            }
+        }
+
         // Materialize to an array to provide a stable snapshot
         var snapshot = _map.Values.ToArray();
         if (_logger.IsTraceEnabled)

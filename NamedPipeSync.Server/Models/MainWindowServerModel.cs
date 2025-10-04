@@ -58,20 +58,9 @@ public sealed class MainWindowServerModel : IMainWindowServerModel
 
     public void SeedMissingClients()
     {
-        foreach (var cp in Checkpoints.Start)
-        {
-            var id = new ClientId(cp.Id);
-            if (!_repository.TryGet(id, out var _))
-            {
-                var client = new ClientWithRuntime(id, cp)
-                {
-                    Coordinates = cp.Location,
-                    Connection = ConnectionState.Disconnected,
-                    IsOnCheckpoint = true
-                };
-                _repository.Update(client);
-            }
-        }
+        // Ensure repository has been initialized / seeded; repository will
+        // populate from checkpoints if its internal map is empty.
+        _repository.GetAll();
     }
 
     public void EnsureClientEntryOnConnectionChange(ClientId clientId, ConnectionState state)
