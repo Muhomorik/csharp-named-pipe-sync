@@ -9,6 +9,7 @@ using JetBrains.Annotations;
 
 using NamedPipeSync.Common.Application;
 using NamedPipeSync.Common.Domain;
+using NamedPipeSync.Common.Domain.Events;
 using NamedPipeSync.Common.Infrastructure.Protocol;
 using NamedPipeSync.Server.Services;
 
@@ -20,7 +21,8 @@ namespace NamedPipeSync.Server.ViewModels;
 
 public class MainWindowServerViewModel : ViewModelBase
 {
-    private readonly IClientDirectory _clients;
+    private readonly IClientWithRuntimeRepository _repository;
+        private readonly IClientWithRuntimeEventDispatcher _events;
     private readonly IClientProcessLauncher _launcher;
     private readonly ILogger _logger;
     private readonly INamedPipeServer _server;
@@ -28,37 +30,76 @@ public class MainWindowServerViewModel : ViewModelBase
 
     private string _title = "Server";
 
+
     /// <summary>
     /// Used by DI container to create type.
     /// </summary>
     /// <param name="logger"></param>
     /// <param name="server"></param>
-    /// <param name="clients"></param>
+    /// <param name="repository"></param>
+    /// <param name="events"></param>
     /// <param name="launcher"></param>
     /// <exception cref="ArgumentNullException"></exception>
     [UsedImplicitly]
-    public MainWindowServerViewModel(ILogger logger, INamedPipeServer server, IClientDirectory clients,
+    public MainWindowServerViewModel(
+        ILogger logger,
+        INamedPipeServer server,
+        IClientWithRuntimeRepository repository,
+        IClientWithRuntimeEventDispatcher events,
         IClientProcessLauncher launcher)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _server = server ?? throw new ArgumentNullException(nameof(server));
-        _clients = clients ?? throw new ArgumentNullException(nameof(clients));
+        _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+        _events = events ?? throw new ArgumentNullException(nameof(events));
         _launcher = launcher ?? throw new ArgumentNullException(nameof(launcher));
         _uiScheduler = DispatcherScheduler.Current;
 
         Title = "NamedPipeSync Server";
 
+        // React to connection changes to keep UI connection state in sync and ensure repository has the client entry
         _server.ConnectionChanged
             .ObserveOn(_uiScheduler)
             .Subscribe(change =>
             {
-                var client = _clients.GetOrCreate(change.ClientId);
-                client.SetConnection(change.State);
-                // Subscribe to client coordinate changes to keep UI in sync
-                client.CoordinatesChanged
-                    .ObserveOn(_uiScheduler)
-                    .Subscribe(_ => UpsertClientState(client));
+                if (!_repository.TryGet(change.ClientId, out var client))
+                {
+                    // Seed using checkpoint with same id when available, otherwise use first checkpoint
+                    var cp = Checkpoints.Start.FirstOrDefault(c => c.Id == change.ClientId.Id);
+                    if (cp.Id == 0 && Checkpoints.Start.Count > 0)
+                    {
+                        cp = Checkpoints.Start[0];
+                    }
+                    client = new ClientWithRuntime(change.ClientId, cp);
+                }
+                client!.Connection = change.State;
+                _repository.Update(client);
                 UpsertClientState(client);
+            });
+
+        // Subscribe to domain events by type
+        _events.Events
+            .ObserveOn(_uiScheduler)
+            .OfType<CoordinatesUpdated>()
+            .Subscribe(evt =>
+            {
+                if (_repository.TryGet(evt.ClientId, out var client))
+                {
+                    // Client runtime state is already updated by calculators/schedulers; reflect it in UI
+                    UpsertClientState(client!);
+                }
+            });
+
+        _events.Events
+            .ObserveOn(_uiScheduler)
+            .OfType<CheckpointReached>()
+            .Subscribe(evt =>
+            {
+                // Currently, just refresh UI from repository snapshot
+                if (_repository.TryGet(evt.ClientId, out var client))
+                {
+                    UpsertClientState(client!);
+                }
             });
 
         StartClientCommand = new AsyncCommand<int>(StartClientAsync);
@@ -76,7 +117,8 @@ public class MainWindowServerViewModel : ViewModelBase
     {
         _logger = LogManager.GetCurrentClassLogger();
         _server = null!;
-        _clients = null!;
+        _repository = null!;
+        _events = null!;
         _launcher = null!;
         _uiScheduler = DispatcherScheduler.Current;
 
@@ -128,14 +170,26 @@ public class MainWindowServerViewModel : ViewModelBase
 
     private void OnWindowLoaded()
     {
-        // Seed clients based on available start checkpoints (players == checkpoints)
-        _clients.ReadClients(Checkpoints.Start.Count);
-        foreach (var c in _clients.All)
+        // Seed repository with clients based on available start checkpoints (players == checkpoints)
+        foreach (var cp in Checkpoints.Start)
         {
-            // subscribe to coordinate changes per client
-            c.CoordinatesChanged
-                .ObserveOn(_uiScheduler)
-                .Subscribe(_ => UpsertClientState(c));
+            var id = new ClientId(cp.Id);
+            if (!_repository.TryGet(id, out var existing))
+            {
+                var client = new ClientWithRuntime(id, cp)
+                {
+                    Coordinates = cp.Location,
+                    Connection = ConnectionState.Disconnected,
+                    IsOnCheckpoint = true
+                };
+                _repository.Update(client);
+            }
+        }
+
+        // Initialize UI from repository snapshot
+        var all = _repository.GetAll();
+        foreach (var c in all)
+        {
             UpsertClientState(c);
         }
 
@@ -144,7 +198,7 @@ public class MainWindowServerViewModel : ViewModelBase
         _server.Start();
     }
 
-    private void UpsertClientState(Client client)
+    private void UpsertClientState(ClientWithRuntime client)
     {
         var existing = Clients.FirstOrDefault(x => x.Id == client.Id.Id);
         if (existing == null)

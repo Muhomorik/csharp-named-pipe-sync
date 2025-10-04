@@ -90,8 +90,9 @@ public partial class App : Application
             .As<INamedPipeServer>()
             .SingleInstance();
 
-        builder.RegisterType<ClientDirectory>()
-            .As<IClientDirectory>()
+        // Register runtime repository for clients
+        builder.RegisterType<InMemoryClientWithRuntimeRepository>()
+            .As<IClientWithRuntimeRepository>()
             .SingleInstance();
 
         builder.RegisterType<ClientWithRuntimeEventDispatcher>()
