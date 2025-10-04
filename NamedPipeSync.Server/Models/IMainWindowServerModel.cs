@@ -105,6 +105,22 @@ public interface IMainWindowServerModel
     Task StartManyAsync(IEnumerable<ClientId> ids, CancellationToken ct = default);
 
     /// <summary>
+    /// Begins periodic coordinate calculation and sending to connected clients. Idempotent.
+    /// </summary>
+    void StartSending();
+
+    /// <summary>
+    /// Stops periodic coordinate sending. Safe to call multiple times.
+    /// </summary>
+    void StopSending();
+
+    /// <summary>
+    /// Resets each client's position to its last checkpoint and sends an update.
+    /// </summary>
+    /// <param name="ct">Cancellation token.</param>
+    Task ResetPositionAsync(CancellationToken ct = default);
+
+    /// <summary>
     /// Sends a close/shutdown request to all currently connected clients.
     /// </summary>
     /// <param name="ct">Cancellation token. If canceled, pending close requests should be canceled and the returned task should observe the cancellation.</param>

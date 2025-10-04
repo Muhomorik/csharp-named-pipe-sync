@@ -24,6 +24,7 @@ public sealed class MainWindowServerModel : IMainWindowServerModel
     private readonly IClientWithRuntimeRepository _repository;
     private readonly IClientWithRuntimeEventDispatcher _events;
     private readonly IClientProcessLauncher _launcher;
+    private readonly ICoordinatesSendScheduler _scheduler;
 
     public IObservable<ClientConnectionChange> ConnectionChanged => _server.ConnectionChanged;
     public IObservable<ClientWithRuntimeEvent> Events => _events.Events;
@@ -42,13 +43,15 @@ public sealed class MainWindowServerModel : IMainWindowServerModel
         INamedPipeServer server,
         IClientWithRuntimeRepository repository,
         IClientWithRuntimeEventDispatcher events,
-        IClientProcessLauncher launcher)
+        IClientProcessLauncher launcher,
+        ICoordinatesSendScheduler scheduler)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _server = server ?? throw new ArgumentNullException(nameof(server));
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         _events = events ?? throw new ArgumentNullException(nameof(events));
         _launcher = launcher ?? throw new ArgumentNullException(nameof(launcher));
+        _scheduler = scheduler ?? throw new ArgumentNullException(nameof(scheduler));
     }
 
     public void StartServer() => _server.Start();
@@ -107,5 +110,20 @@ public sealed class MainWindowServerModel : IMainWindowServerModel
         {
             _logger.Error(ex);
         }
+    }
+
+    public void StartSending()
+    {
+        _scheduler.StartSending();
+    }
+
+    public void StopSending()
+    {
+        _scheduler.StopSending();
+    }
+
+    public Task ResetPositionAsync(CancellationToken ct = default)
+    {
+        return _scheduler.ResetPositionAsync(ct);
     }
 }

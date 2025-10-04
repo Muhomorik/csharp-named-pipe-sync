@@ -169,22 +169,52 @@
         </DataGrid>
 
         <!-- Actions -->
-        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="12,0,12,10" HorizontalAlignment="Left">
-            <Button Margin="0,0,8,0"
-                    Content="Close all clients"
-                    Command="{Binding CloseAllClientsCommand}"
-                    Padding="12,6"
-                    BorderBrush="{DynamicResource Brush.Error	}"
-                    BorderThickness="2"
-                    Foreground="{DynamicResource MahApps.Brushes.ThemeForeground}" />
-            <Button
-                    Content="Start all clients"
-                    Command="{Binding StartAllCommand}"
-                    IsEnabled="{Binding CanStartAll}"
-                    Padding="12,6"
-                    Background="{DynamicResource MahApps.Brushes.Accent4}"
-                    Foreground="{DynamicResource MahApps.Brushes.ThemeForeground}" />
-        </StackPanel>
+        <Grid Grid.Row="2" Margin="12,0,12,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Left actions -->
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                <Button Margin="0,0,8,0"
+                        Content="Close all clients"
+                        Command="{Binding CloseAllClientsCommand}"
+                        Padding="12,6"
+                        BorderBrush="{DynamicResource Brush.Error\t}"
+                        BorderThickness="2"
+                        Foreground="{DynamicResource MahApps.Brushes.ThemeForeground}" />
+                <Button
+                        Content="Start all clients"
+                        Command="{Binding StartAllCommand}"
+                        IsEnabled="{Binding CanStartAll}"
+                        Padding="12,6"
+                        Background="{DynamicResource MahApps.Brushes.Accent4}"
+                        Foreground="{DynamicResource MahApps.Brushes.ThemeForeground}" />
+            </StackPanel>
+
+            <!-- Right actions: icon-only buttons -->
+            <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" >
+                <Button Margin="8,0,0,0"
+                        ToolTip="Start sending"
+                        Command="{Binding StartSendingCommand}"
+                        Padding="8,6">
+                    <TextBlock Text="▶" FontSize="14"/>
+                </Button>
+                <Button Margin="8,0,0,0"
+                        ToolTip="Stop sending"
+                        Command="{Binding StopSendingCommand}"
+                        Padding="8,6">
+                    <TextBlock Text="■" FontSize="14"/>
+                </Button>
+                <Button Margin="8,0,0,0"
+                        ToolTip="Reset position"
+                        Command="{Binding ResetPositionCommand}"
+                        Padding="8,6">
+                    <TextBlock Text="↺" FontSize="14"/>
+                </Button>
+            </StackPanel>
+        </Grid>
 
         <!-- Status Bar -->
         <StatusBar Grid.Row="3" Margin="8,0" Padding="6,2">

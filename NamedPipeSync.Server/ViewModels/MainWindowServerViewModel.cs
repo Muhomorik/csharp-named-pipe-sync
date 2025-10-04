@@ -68,8 +68,10 @@ public class MainWindowServerViewModel : ViewModelBase, IDisposable
         // Subscribe to domain events by type
         _disposables.Add(
             _model.Events
-                .ObserveOn(_uiScheduler)
                 .OfType<CoordinatesUpdated>()
+                // Reduce UI churn from high-frequency updates; keep UI smooth
+                .Sample(TimeSpan.FromMilliseconds(100))
+                .ObserveOn(_uiScheduler)
                 .Subscribe(evt =>
                 {
                     if (_model.TryGet(evt.ClientId, out var client))
@@ -97,6 +99,9 @@ public class MainWindowServerViewModel : ViewModelBase, IDisposable
         LoadedCommand = new DelegateCommand(OnWindowLoaded);
         CloseAllClientsCommand = new AsyncCommand(CloseAllClientsAsync);
         ToggleClientCommand = new AsyncCommand<int>(ToggleClientAsync);
+        StartSendingCommand = new AsyncCommand(StartSendingAsync);
+        StopSendingCommand = new AsyncCommand(StopSendingAsync);
+        ResetPositionCommand = new AsyncCommand(ResetPositionAsync);
     }
 
     /// <summary>
@@ -116,6 +121,9 @@ public class MainWindowServerViewModel : ViewModelBase, IDisposable
         LoadedCommand = new DelegateCommand(() => { });
         CloseAllClientsCommand = new AsyncCommand(() => Task.CompletedTask);
         ToggleClientCommand = new AsyncCommand<int>(_ => Task.CompletedTask);
+        StartSendingCommand = new AsyncCommand(() => Task.CompletedTask);
+        StopSendingCommand = new AsyncCommand(() => Task.CompletedTask);
+        ResetPositionCommand = new AsyncCommand(() => Task.CompletedTask);
     }
 
     protected override void OnInitializeInDesignMode()
@@ -147,6 +155,10 @@ public class MainWindowServerViewModel : ViewModelBase, IDisposable
 
     // New command for per-row actions
     public ICommand ToggleClientCommand { get; }
+
+    public ICommand StartSendingCommand { get; }
+    public ICommand StopSendingCommand { get; }
+    public ICommand ResetPositionCommand { get; }
 
     /// <summary>
     /// Message shown in the status bar. When the client executable is missing this will contain a warning.
@@ -231,6 +243,30 @@ public class MainWindowServerViewModel : ViewModelBase, IDisposable
         }
 
         return Task.CompletedTask;
+    }
+
+    private Task StartSendingAsync()
+    {
+        _model.StartSending();
+        return Task.CompletedTask;
+    }
+
+    private Task StopSendingAsync()
+    {
+        _model.StopSending();
+        return Task.CompletedTask;
+    }
+
+    private async Task ResetPositionAsync()
+    {
+        try
+        {
+            await _model.ResetPositionAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex);
+        }
     }
 
     private async Task CloseAllClientsAsync()

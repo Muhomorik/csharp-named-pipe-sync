@@ -1,3 +1,4 @@
+using System;
 using System.Reactive.Concurrency;
 using System.Reflection;
 using System.Windows;
@@ -122,6 +123,14 @@ public partial class App : Application
 
         builder.RegisterType<SimpleRingCoordinatesCalculator>()
             .As<ICoordinatesCalculator>()
+            .SingleInstance();
+
+        // Register the coordinates send scheduler with sensible defaults
+        // Use TaskPoolScheduler.Default (registered below) for background timing
+        builder.RegisterType<CoordinatesSendScheduler>()
+            .As<ICoordinatesSendScheduler>()
+            .WithParameter(new TypedParameter(typeof(TimeSpan), TimeSpan.FromMilliseconds(50)))
+            .WithParameter(new TypedParameter(typeof(int), 4))
             .SingleInstance();
 
         // IScheduler for Rx: production uses TaskPoolScheduler; tests can override
