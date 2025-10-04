@@ -38,6 +38,13 @@ public sealed class InMemoryClientWithRuntimeRepository : IClientWithRuntimeRepo
                     Connection = ConnectionState.Disconnected,
                     IsOnCheckpoint = true
                 };
+
+                // Determine the next checkpoint in the configured sequence and set it
+                var cps = Checkpoints.Start;
+                var idx = Math.Max(0, cps.ToList().FindIndex(c => c.Id == cp.Id));
+                var next = cps[(idx + 1) % cps.Count];
+                client.MovingToCheckpoint = next;
+
                 _map.TryAdd(id.Id, client);
             }
         }
