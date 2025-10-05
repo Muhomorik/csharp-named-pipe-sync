@@ -126,6 +126,11 @@ public partial class App : Application
             .As<IApplicationLifetime>()
             .SingleInstance();
 
+        // Register MainWindow model
+        builder.RegisterType<MainWindowModel>()
+            .As<IMainWindowModel>()
+            .InstancePerDependency();
+
         // Fallback: Register all types from executing assembly
         //builder.RegisterAssemblyTypes(Assembly.GetExecutingAssembly()).AsSelf().AsImplementedInterfaces();
     }

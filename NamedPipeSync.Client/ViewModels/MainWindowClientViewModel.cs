@@ -21,38 +21,27 @@ namespace NamedPipeSync.Client.ViewModels;
 public class MainWindowClientViewModel : ViewModelBase, IDisposable
 {
     private readonly ILogger _logger;
-    private readonly IApplicationLifetime _appLifetime;
-    private readonly IClientContext _clientContext;
-
-    private readonly CompositeDisposable _disposables = new();
+    private readonly IMainWindowModel _model;
     private readonly IScheduler _uiScheduler;
 
-    private readonly INamedPipeClient _pipeClient;
-
+    private readonly CompositeDisposable _disposables = new();
     private string _title = "VM: Client Window";
-
 
     /// <summary>
     /// Used by DI container to create type.
     /// </summary>
-    /// <param name="logger"></param>
-    /// <param name="clientContext"></param>
-    /// <param name="appLifetime"></param>
-    /// <param name="pipeClient"></param>
-    /// <param name="uiScheduler"></param>
+    /// <param name="logger">Logger instance</param>
+    /// <param name="model">Model providing encapsulated functionality</param>
+    /// <param name="uiScheduler">UI scheduler for thread marshalling</param>
     /// <exception cref="ArgumentNullException"></exception>
     [UsedImplicitly]
     public MainWindowClientViewModel(
         ILogger logger,
-        IClientContext clientContext,
-        IApplicationLifetime appLifetime,
-        INamedPipeClient pipeClient,
+        IMainWindowModel model,
         IScheduler uiScheduler)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _clientContext = clientContext ?? throw new ArgumentNullException(nameof(clientContext));
-        _appLifetime = appLifetime ?? throw new ArgumentNullException(nameof(appLifetime));
-        _pipeClient = pipeClient ?? throw new ArgumentNullException(nameof(pipeClient));
+        _model = model ?? throw new ArgumentNullException(nameof(model));
         _uiScheduler = uiScheduler ?? throw new ArgumentNullException(nameof(uiScheduler));
 
         ExitCommand = new DelegateCommand(OnExit);
@@ -71,9 +60,10 @@ public class MainWindowClientViewModel : ViewModelBase, IDisposable
     public MainWindowClientViewModel()
     {
         _logger = LogManager.GetCurrentClassLogger();
-        _clientContext = new DesignTimeClientContext();
-        _appLifetime = new DesignTimeApplicationLifetime();
-        _pipeClient = new DesignTimePipeClient();
+        _model = new MainWindowModel(
+            new DesignTimeClientContext(),
+            new DesignTimeApplicationLifetime(),
+            new DesignTimePipeClient());
         _uiScheduler = CurrentThreadScheduler.Instance;
 
         ExitCommand = new DelegateCommand(() =>
@@ -121,13 +111,13 @@ public class MainWindowClientViewModel : ViewModelBase, IDisposable
     private void WireUpObservables()
     {
         // Ensure we observe on the UI scheduler so setters run on GUI thread
-        _disposables.Add(_pipeClient.ConnectionChanged
+        _disposables.Add(_model.ConnectionChanges
             .ObserveOn(_uiScheduler)
-            .Subscribe(state => Title = $"Client {_clientContext.ClientId}: {state.State}"));
+            .Subscribe(state => Title = $"Client {_model.GetClientId()}: {state.State}"));
 
-        _disposables.Add(_pipeClient.Coordinates
+        _disposables.Add(_model.Coordinates
             .ObserveOn(_uiScheduler)
-            .Subscribe(c => Title = $"Client {_clientContext.ClientId}: ({c.X:0.###}, {c.Y:0.###})"));
+            .Subscribe(c => Title = $"Client {_model.GetClientId()}: ({c.X:0.###}, {c.Y:0.###})"));
     }
 
 
@@ -137,7 +127,7 @@ public class MainWindowClientViewModel : ViewModelBase, IDisposable
         {
             _logger.Trace("MainWindow loaded.");
 
-            await _pipeClient.ConnectAsync(TimeSpan.FromSeconds(10), CancellationToken.None);
+            await _model.ConnectAsync(TimeSpan.FromSeconds(10), CancellationToken.None);
         }
         catch (Exception e)
         {
@@ -149,7 +139,7 @@ public class MainWindowClientViewModel : ViewModelBase, IDisposable
     {
         try
         {
-            await _pipeClient.ConnectAsync();
+            await _model.ConnectAsync();
         }
         catch (OperationCanceledException)
         {
@@ -165,7 +155,7 @@ public class MainWindowClientViewModel : ViewModelBase, IDisposable
     {
         try
         {
-            await _pipeClient.DisconnectAsync();
+            await _model.DisconnectAsync();
         }
         catch (Exception ex)
         {
@@ -175,7 +165,7 @@ public class MainWindowClientViewModel : ViewModelBase, IDisposable
 
     private void OnExit()
     {
-        _logger.Info("Shutdown requested by user from Client VM (ClientId={ClientId})", _clientContext.ClientId);
-        _appLifetime.Shutdown();
+        _logger.Info("Shutdown requested by user from Client VM (ClientId={ClientId})", _model.GetClientId());
+        _model.RequestShutdown();
     }
 }
