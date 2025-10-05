@@ -134,12 +134,24 @@ public class MainWindowClientViewModel : ViewModelBase, IDisposable
 
         // Toggle border visibility based on connection state:
         // When Connected -> hide border/caption (BorderIsVisible = false).
-        // When not Connected -> show border/caption (BorderIsVisible = true).
+        // When Disconnected -> show border/caption (BorderIsVisible = true).
         _disposables.Add(_model.ConnectionChanges
             .ObserveOn(_uiScheduler)
             .Subscribe(state =>
             {
-                BorderIsVisible = state.State != ConnectionState.Connected;
+                switch (state.State)
+                {
+                    case ConnectionState.Connected:
+                        BorderIsVisible = false;
+                        break;
+                    case ConnectionState.Disconnected:
+                        BorderIsVisible = true;
+                        break;
+                    default:
+                        // For any unknown/future states, show the border by default.
+                        BorderIsVisible = true;
+                        break;
+                }
             }));
     }
 
