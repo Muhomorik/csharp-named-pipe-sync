@@ -66,16 +66,13 @@ public class MainWindowClientViewModel : ViewModelBase, IDisposable
             new DesignTimePipeClient());
         _uiScheduler = CurrentThreadScheduler.Instance;
 
-        ExitCommand = new DelegateCommand(() =>
-        {
-            /* no-op at design time */
-        });
+        ExitCommand = new DelegateCommand(() => { });
         ConnectCommand = new DelegateCommand(() => { });
         DisconnectCommand = new DelegateCommand(() => { });
-        LoadedCommand = new AsyncCommand(async () =>
-        {
-            /* no-op at design time */
-        });
+        LoadedCommand = new AsyncCommand(() => Task.CompletedTask);
+
+        ClientText = "READY: Client (Design)";
+        BorderIsVisible = true;
     }
 
     public DelegateCommand ExitCommand { get; }
