@@ -94,6 +94,9 @@ public class MainWindowClientViewModel : ViewModelBase, IDisposable
     private double _windowContentWidth = 288;
     private double _windowContentHeight = 288;
 
+    // Backing field for BorderIsVisible. Default is true.
+    private bool _borderIsVisible = true;
+
     public double WindowContentWidth
     {
         get => _windowContentWidth;
@@ -104,6 +107,16 @@ public class MainWindowClientViewModel : ViewModelBase, IDisposable
     {
         get => _windowContentHeight;
         set => SetProperty(ref _windowContentHeight, value, nameof(WindowContentHeight));
+    }
+
+    /// <summary>
+    /// Controls whether the window border/caption are visible.
+    /// True by default; set to false when a Connected state is received.
+    /// </summary>
+    public bool BorderIsVisible
+    {
+        get => _borderIsVisible;
+        set => SetProperty(ref _borderIsVisible, value, nameof(BorderIsVisible));
     }
 
     public void Dispose() => _disposables.Dispose();
@@ -118,6 +131,16 @@ public class MainWindowClientViewModel : ViewModelBase, IDisposable
         _disposables.Add(_model.Coordinates
             .ObserveOn(_uiScheduler)
             .Subscribe(c => Title = $"Client {_model.GetClientId()}: ({c.X:0.###}, {c.Y:0.###})"));
+
+        // Toggle border visibility based on connection state:
+        // When Connected -> hide border/caption (BorderIsVisible = false).
+        // When not Connected -> show border/caption (BorderIsVisible = true).
+        _disposables.Add(_model.ConnectionChanges
+            .ObserveOn(_uiScheduler)
+            .Subscribe(state =>
+            {
+                BorderIsVisible = state.State != ConnectionState.Connected;
+            }));
     }
 
 

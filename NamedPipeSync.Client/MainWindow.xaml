@@ -9,6 +9,20 @@
                  mc:Ignorable="d"
                  d:DataContext="{d:DesignInstance Type=viewModels:MainWindowClientViewModel, IsDesignTimeCreatable=True}"
                  Title="{Binding Title}">
+    <!-- Style that toggles the window chrome based on BorderIsVisible -->
+    <mah:MetroWindow.Style>
+        <Style TargetType="mah:MetroWindow">
+            <!-- default window style with border -->
+            <Setter Property="WindowStyle" Value="SingleBorderWindow"/>
+            <Style.Triggers>
+                <!-- when BorderIsVisible == false remove the caption and border -->
+                <DataTrigger Binding="{Binding BorderIsVisible}" Value="False">
+                    <Setter Property="WindowStyle" Value="None"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+    </mah:MetroWindow.Style>
+
     <dxmvvm:Interaction.Triggers>
         <dxmvvm:EventToCommand EventName="Loaded" Command="{Binding LoadedCommand}" />
     </dxmvvm:Interaction.Triggers>
