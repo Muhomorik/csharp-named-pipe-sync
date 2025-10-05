@@ -96,6 +96,7 @@ public class MainWindowClientViewModel : ViewModelBase, IDisposable
 
     // Backing field for ClientText. Default visible text shown in the UI.
     private string _clientText = "READY: Client";
+    private TimeSpan _captionHideDelay;
 
     public double WindowContentWidth
     {
@@ -141,6 +142,26 @@ public class MainWindowClientViewModel : ViewModelBase, IDisposable
         _disposables.Add(_model.Coordinates
             .ObserveOn(_uiScheduler)
             .Subscribe(c => Title = $"Client {_model.GetClientId()}: ({c.X:0.###}, {c.Y:0.###})"));
+
+        // While coordinates are being received, hide the border/caption (BorderIsVisible = false).
+        // If no coordinate arrives for 5 seconds, emit true to show the border again.
+        _disposables.Add(
+            _model.Coordinates
+                // For each coordinate start a sequence that immediately yields 'false'
+                // and then yields 'true' after 5 seconds; Switch ensures the timer restarts on new coords.
+                .Select(_ =>
+                {
+                    _captionHideDelay = TimeSpan.FromSeconds(5);
+                    return Observable.Timer(_captionHideDelay, _uiScheduler)
+                        .Select(__ => true)
+                        .StartWith(false);
+                })
+                .Switch()
+                // Ensure the stream emits an initial 'true' so the border is visible at startup
+                .StartWith(true)
+                .ObserveOn(_uiScheduler)
+                .Subscribe(visible => BorderIsVisible = visible)
+        );
 
         // Toggle border visibility based on connection state:
         // When Connected -> hide border/caption (BorderIsVisible = false).
