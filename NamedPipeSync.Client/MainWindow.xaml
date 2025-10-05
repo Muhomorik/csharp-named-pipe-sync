@@ -37,8 +37,8 @@
         <StackPanel Grid.Row="1"
                     HorizontalAlignment="Center"
                     VerticalAlignment="Center">
-            <TextBlock x:Name="ReadyText"
-                       Text="READY: Client"
+            <TextBlock x:Name="ClientText"
+                       Text="{Binding ClientText}"
                        Foreground="Orange"
                        FontSize="40"
                        FontWeight="Bold"

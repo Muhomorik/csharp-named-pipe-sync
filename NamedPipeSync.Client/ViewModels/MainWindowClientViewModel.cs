@@ -97,6 +97,9 @@ public class MainWindowClientViewModel : ViewModelBase, IDisposable
     // Backing field for BorderIsVisible. Default is true.
     private bool _borderIsVisible = true;
 
+    // Backing field for ClientText. Default visible text shown in the UI.
+    private string _clientText = "READY: Client";
+
     public double WindowContentWidth
     {
         get => _windowContentWidth;
@@ -117,6 +120,16 @@ public class MainWindowClientViewModel : ViewModelBase, IDisposable
     {
         get => _borderIsVisible;
         set => SetProperty(ref _borderIsVisible, value, nameof(BorderIsVisible));
+    }
+
+    /// <summary>
+    /// Text shown in the main ClientText TextBlock.
+    /// Default is "READY: Client".
+    /// </summary>
+    public string ClientText
+    {
+        get => _clientText;
+        set => SetProperty(ref _clientText, value, nameof(ClientText));
     }
 
     public void Dispose() => _disposables.Dispose();
