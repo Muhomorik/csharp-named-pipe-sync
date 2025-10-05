@@ -12,12 +12,16 @@
     <!-- Style that toggles the window chrome based on BorderIsVisible -->
     <mah:MetroWindow.Style>
         <Style TargetType="mah:MetroWindow">
-            <!-- default window style with border -->
-            <Setter Property="WindowStyle" Value="SingleBorderWindow"/>
+            <!-- default: do not use the 'none' MetroWindow style (show chrome) -->
+            <Setter Property="mah:MetroWindow.UseNoneWindowStyle" Value="False"/>
             <Style.Triggers>
                 <!-- when BorderIsVisible == false remove the caption and border -->
                 <DataTrigger Binding="{Binding BorderIsVisible}" Value="False">
-                    <Setter Property="WindowStyle" Value="None"/>
+                    <Setter Property="mah:MetroWindow.UseNoneWindowStyle" Value="True"/>
+                </DataTrigger>
+                <!-- when BorderIsVisible == true ensure the caption and border are shown -->
+                <DataTrigger Binding="{Binding BorderIsVisible}" Value="True">
+                    <Setter Property="mah:MetroWindow.UseNoneWindowStyle" Value="False"/>
                 </DataTrigger>
             </Style.Triggers>
         </Style>
