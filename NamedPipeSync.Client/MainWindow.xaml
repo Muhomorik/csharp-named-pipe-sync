@@ -9,6 +9,12 @@
                  mc:Ignorable="d"
                  d:DataContext="{d:DesignInstance Type=viewModels:MainWindowClientViewModel, IsDesignTimeCreatable=True}"
                  Title="{Binding Title}">
+    <!-- Background bound to an ImageBrush (via ImageSource) -->
+    <mah:MetroWindow.Background>
+        <ImageBrush ImageSource="{Binding BackgroundImage}"
+                    Stretch="UniformToFill" />
+    </mah:MetroWindow.Background>
+
     <!-- Style that toggles the window chrome based on BorderIsVisible -->
     <mah:MetroWindow.Style>
         <Style TargetType="mah:MetroWindow">

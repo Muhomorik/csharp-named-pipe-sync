@@ -13,6 +13,9 @@ using NamedPipeSync.Common.Application;
 
 using NLog;
 
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+
 namespace NamedPipeSync.Client.ViewModels;
 
 /// <summary>
@@ -26,6 +29,30 @@ public class MainWindowClientViewModel : ViewModelBase, IDisposable
 
     private readonly CompositeDisposable _disposables = new();
     private string _title = "VM: Client Window";
+
+    // Background image bound from the ViewModel to the View (explicit WriteableBitmap)
+    private WriteableBitmap _backgroundImage;
+
+    public WriteableBitmap BackgroundImage
+    {
+        get => _backgroundImage;
+        set => SetProperty(ref _backgroundImage, value, nameof(BackgroundImage));
+    }
+
+    /// <summary>
+    /// Creates a solid background image with predefined dimensions and color.
+    /// </summary>
+    /// <returns>A frozen <see cref="WriteableBitmap"/> instance representing the background image.</returns>
+    private WriteableBitmap CreateBackgroundImage()
+    {
+        const int width = 1;
+        const int height = 1;
+        var wb = new WriteableBitmap(width, height, 96, 96, PixelFormats.Pbgra32, null);
+        var pixels = new byte[] { 37, 37, 37, 255 }; // BGRA - blue, green, red, alpha
+        wb.WritePixels(new System.Windows.Int32Rect(0, 0, width, height), pixels, 4 * width, 0);
+        wb.Freeze();
+        return wb;
+    }
 
     /// <summary>
     /// Used by DI container to create type.
@@ -49,6 +76,9 @@ public class MainWindowClientViewModel : ViewModelBase, IDisposable
         DisconnectCommand = new DelegateCommand(async () => await OnDisconnectAsync());
         LoadedCommand = new AsyncCommand(OnLoadedAsync);
 
+        // Initialize the background image (solid RGB(37,37,37))
+        BackgroundImage = CreateBackgroundImage();
+
         WireUpObservables();
     }
 
@@ -70,6 +100,9 @@ public class MainWindowClientViewModel : ViewModelBase, IDisposable
         ConnectCommand = new DelegateCommand(() => { });
         DisconnectCommand = new DelegateCommand(() => { });
         LoadedCommand = new AsyncCommand(() => Task.CompletedTask);
+
+        // Initialize the background image for design-time
+        BackgroundImage = CreateBackgroundImage();
 
         ClientText = "READY: Client (Design)";
         BorderIsVisible = true;
