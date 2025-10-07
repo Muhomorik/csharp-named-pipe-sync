@@ -32,17 +32,21 @@ public sealed class InMemoryClientWithRuntimeRepository : IClientWithRuntimeRepo
             foreach (var cp in Checkpoints.Start)
             {
                 var id = new ClientId(cp.Id);
-                var client = new ClientWithRuntime(id, cp)
+
+                // Determine the next checkpoint(s) in the configured sequence.
+                var cps = Checkpoints.Start;
+                var idx = Math.Max(0, cps.ToList().FindIndex(c => c.Id == cp.Id));
+                var next = cps[(idx + 1) % cps.Count];
+                var render = cps[(idx + 2) % cps.Count];
+
+                var client = new ClientWithRuntime(id, cp, render)
                 {
                     Coordinates = cp.Location,
                     Connection = ConnectionState.Disconnected,
                     IsOnCheckpoint = true
                 };
 
-                // Determine the next checkpoint in the configured sequence and set it
-                var cps = Checkpoints.Start;
-                var idx = Math.Max(0, cps.ToList().FindIndex(c => c.Id == cp.Id));
-                var next = cps[(idx + 1) % cps.Count];
+                // Set the immediate moving target to the next checkpoint (index +1)
                 client.MovingToCheckpoint = next;
 
                 _map.TryAdd(id.Id, client);

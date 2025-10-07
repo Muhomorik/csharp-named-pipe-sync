@@ -1,9 +1,7 @@
-﻿using System;
-using System.Diagnostics;
-using System.Linq;
-using NamedPipeSync.Common.Domain;
-using NamedPipeSync.Common.Infrastructure.Protocol;
+﻿using System.Diagnostics;
+
 using NamedPipeSync.Common.Application;
+using NamedPipeSync.Common.Infrastructure.Protocol;
 
 namespace NamedPipeSync.Common.Domain;
 
@@ -11,31 +9,27 @@ namespace NamedPipeSync.Common.Domain;
 ///     Represents a client entity enriched with runtime state used by the application while the process is running.
 /// </summary>
 /// <remarks>
-///     This type complements the simpler <see cref="Client"/> domain entity by carrying additional, ephemeral
+///     This type complements the simpler <see cref="Client" /> domain entity by carrying additional, ephemeral
 ///     runtime information such as the last checkpoint reached and the next checkpoint being targeted.
 ///     It does not perform I/O, UI operations, or process lifetime control; it is a pure domain model.
 /// </remarks>
-[DebuggerDisplay("Id = {Id}, Connection = {Connection}, Coordinates = {Coordinates}, Last = {LastCheckpoint.Id}, Next = {MovingToCheckpoint.Id}, OnCp = {IsOnCheckpoint}")]
+[DebuggerDisplay(
+    "Id = {Id}, Connection = {Connection}, Coordinates = {Coordinates}, Last = {LastCheckpoint.Id}, Next = {MovingToCheckpoint.Id}, OnCp = {IsOnCheckpoint}")]
 public sealed class ClientWithRuntime
 {
     private bool _isOnCheckpoint;
 
-    /// <summary>
-    ///     Creates a new instance with the specified client identifier and default runtime state.
-    /// </summary>
-    /// <param name="id">Unique client identifier. Must be a valid <see cref="ClientId"/> produced by the infrastructure layer.</param>
-    [Obsolete("Provide a starting checkpoint to satisfy the non-null checkpoint invariant.")]
-    public ClientWithRuntime(ClientId id)
-        : this(id, Checkpoints.Start[0])
-    {
-    }
 
     /// <summary>
     ///     Creates a new instance with the specified client identifier and a required starting checkpoint.
     /// </summary>
-    /// <param name="id">Unique client identifier. Must be a valid <see cref="ClientId"/> produced by the infrastructure layer.</param>
+    /// <param name="id">
+    /// Unique client identifier. Must be a valid <see cref="ClientId" /> produced by the infrastructure
+    ///     layer.
+    /// </param>
     /// <param name="startingCheckpoint">The initial checkpoint associated with this client; cannot be null.</param>
-    public ClientWithRuntime(ClientId id, Checkpoint startingCheckpoint)
+    /// <param name="renderCheckpoint">The checkpoint used for rendering context; cannot be changed after construction.</param>
+    public ClientWithRuntime(ClientId id, Checkpoint startingCheckpoint, Checkpoint renderCheckpoint)
     {
         Id = id;
         Connection = ConnectionState.Disconnected;
@@ -43,6 +37,7 @@ public sealed class ClientWithRuntime
         LastCheckpoint = startingCheckpoint;
         MovingToCheckpoint = startingCheckpoint;
         _isOnCheckpoint = false;
+        RenderCheckpoint = renderCheckpoint;
     }
 
     /// <summary>
@@ -67,14 +62,15 @@ public sealed class ClientWithRuntime
 
     /// <summary>
     ///     The checkpoint the client is currently moving to. Never null; the client is always moving towards a checkpoint.
-    ///     When <see cref="IsOnCheckpoint"/> is true, this value is automatically set to <see cref="LastCheckpoint"/>.
+    ///     When <see cref="IsOnCheckpoint" /> is true, this value is automatically set to <see cref="LastCheckpoint" />.
     /// </summary>
     public Checkpoint MovingToCheckpoint { get; set; }
 
     /// <summary>
     ///     Indicates whether the client is currently located on a checkpoint (within domain-defined tolerance).
-    ///     Invariant: when set to true, the client is on the <see cref="LastCheckpoint"/>, which is also treated as the current checkpoint.
-    ///     Side effect: setting to true aligns <see cref="MovingToCheckpoint"/> with <see cref="LastCheckpoint"/>.
+    ///     Invariant: when set to true, the client is on the <see cref="LastCheckpoint" />, which is also treated as the
+    ///     current checkpoint.
+    ///     Side effect: setting to true aligns <see cref="MovingToCheckpoint" /> with <see cref="LastCheckpoint" />.
     /// </summary>
     public bool IsOnCheckpoint
     {
@@ -94,16 +90,21 @@ public sealed class ClientWithRuntime
     }
 
     /// <summary>
-    ///     Gets the current checkpoint context: when on a checkpoint, this is <see cref="LastCheckpoint"/>;
-    ///     otherwise, returns <see cref="MovingToCheckpoint"/>.
+    ///     Gets the current checkpoint context: when on a checkpoint, this is <see cref="LastCheckpoint" />;
+    ///     otherwise, returns <see cref="MovingToCheckpoint" />.
     /// </summary>
     public Checkpoint CurrentCheckpoint => IsOnCheckpoint ? LastCheckpoint : MovingToCheckpoint;
+
+    /// <summary>
+    ///     The checkpoint used for rendering/contextual purposes. Immutable after construction.
+    /// </summary>
+    public Checkpoint RenderCheckpoint { get; }
 
     // Encapsulated state transition helpers to avoid external direct property sets
 
     /// <summary>
-    /// Initializes the position to the starting checkpoint if coordinates are unset (0,0).
-    /// Sets IsOnCheckpoint to true. Returns true if initialization occurred.
+    ///     Initializes the position to the starting checkpoint if coordinates are unset (0,0).
+    ///     Sets IsOnCheckpoint to true. Returns true if initialization occurred.
     /// </summary>
     public bool InitializePositionIfNeeded()
     {
@@ -113,12 +114,14 @@ public sealed class ClientWithRuntime
             IsOnCheckpoint = true;
             return true;
         }
+
         return false;
     }
 
     /// <summary>
-    /// Updates the runtime state to reflect that the client has arrived at the specified checkpoint.
-    /// Sets coordinates to the checkpoint location, updates LastCheckpoint and IsOnCheckpoint, and advances MovingToCheckpoint to the next checkpoint in the ring.
+    ///     Updates the runtime state to reflect that the client has arrived at the specified checkpoint.
+    ///     Sets coordinates to the checkpoint location, updates LastCheckpoint and IsOnCheckpoint, and advances
+    ///     MovingToCheckpoint to the next checkpoint in the ring.
     /// </summary>
     /// <param name="target">The checkpoint that was reached.</param>
     public void ArriveAt(Checkpoint target)
@@ -130,8 +133,8 @@ public sealed class ClientWithRuntime
     }
 
     /// <summary>
-    /// Advances coordinates by up to the provided step toward the specified target checkpoint and clears IsOnCheckpoint.
-    /// Returns the new coordinates.
+    ///     Advances coordinates by up to the provided step toward the specified target checkpoint and clears IsOnCheckpoint.
+    ///     Returns the new coordinates.
     /// </summary>
     public Coordinate MoveStepTowards(Checkpoint target, double step)
     {
