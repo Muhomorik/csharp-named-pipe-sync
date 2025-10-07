@@ -73,7 +73,22 @@ public sealed class MainWindowServerModel : IMainWindowServerModel
             {
                 cp = Checkpoints.Start[0];
             }
-            client = new ClientWithRuntime(clientId, cp);
+
+            // Determine render checkpoint as the configured checkpoint at index + 2 (wrap-around).
+            var cps = Checkpoints.Start;
+            Checkpoint renderCp;
+            if (cps.Count > 0)
+            {
+                var idx = Math.Max(0, cps.ToList().FindIndex(c => c.Id == cp.Id));
+                renderCp = cps[(idx + 2) % cps.Count];
+            }
+            else
+            {
+                // No configured checkpoints; fall back to the selected cp.
+                renderCp = cp;
+            }
+
+            client = new ClientWithRuntime(clientId, cp, renderCp);
         }
 
         client!.Connection = state;
