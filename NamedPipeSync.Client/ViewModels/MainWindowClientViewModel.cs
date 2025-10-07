@@ -45,10 +45,20 @@ public class MainWindowClientViewModel : ViewModelBase, IDisposable
     /// <returns>A frozen <see cref="WriteableBitmap"/> instance representing the background image.</returns>
     private WriteableBitmap CreateBackgroundImage()
     {
-        const int width = 1;
-        const int height = 1;
+        const int width = 288;
+        const int height = 288;
         var wb = new WriteableBitmap(width, height, 96, 96, PixelFormats.Pbgra32, null);
-        var pixels = new byte[] { 37, 37, 37, 255 }; // BGRA - blue, green, red, alpha
+
+        // Create a pixel array for a solid color (BGRA: 37, 37, 37, 255)
+        var pixels = new byte[width * height * 4];
+        for (var i = 0; i < width * height; i++)
+        {
+            pixels[i * 4 + 0] = 37; // Blue
+            pixels[i * 4 + 1] = 37; // Green
+            pixels[i * 4 + 2] = 37; // Red
+            pixels[i * 4 + 3] = 255; // Alpha
+        }
+
         wb.WritePixels(new System.Windows.Int32Rect(0, 0, width, height), pixels, 4 * width, 0);
         wb.Freeze();
         return wb;
