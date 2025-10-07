@@ -127,4 +127,9 @@ public interface IMainWindowServerModel
     /// <returns>A task representing the asynchronous close broadcast. The task should not capture the synchronization context.</returns>
     /// <exception cref="OperationCanceledException">Thrown if <paramref name="ct"/> is canceled.</exception>
     Task CloseAllClientsAsync(CancellationToken ct = default);
+
+    /// <summary>
+    /// Current server-wide show mode preset. Changing this value should not produce UI side effects here; it is an application-level state.
+    /// </summary>
+    ShowMode CurrentShowMode { get; set; }
 }

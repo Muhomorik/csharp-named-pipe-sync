@@ -26,8 +26,16 @@ public sealed class MainWindowServerModel : IMainWindowServerModel
     private readonly IClientProcessLauncher _launcher;
     private readonly ICoordinatesSendScheduler _scheduler;
 
+    private ShowMode _currentShowMode = ShowMode.Debugging;
+
     public IObservable<ClientConnectionChange> ConnectionChanged => _server.ConnectionChanged;
     public IObservable<ClientWithRuntimeEvent> Events => _events.Events;
+
+    public ShowMode CurrentShowMode
+    {
+        get => _currentShowMode;
+        set => _currentShowMode = value;
+    }
 
     /// <summary>
     ///     DI constructor. Keep non-UI and do not terminate process here.

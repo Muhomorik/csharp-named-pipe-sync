@@ -102,6 +102,13 @@ public class MainWindowServerViewModel : ViewModelBase, IDisposable
         StartSendingCommand = new AsyncCommand(StartSendingAsync);
         StopSendingCommand = new AsyncCommand(StopSendingAsync);
         ResetPositionCommand = new AsyncCommand(ResetPositionAsync);
+
+        // Initialize ShowMode from model
+        CurrentShowMode = _model.CurrentShowMode;
+
+        SetShowModeDebuggingCommand = new DelegateCommand(() => CurrentShowMode = ShowMode.Debugging);
+        SetShowModeMagicCommand = new DelegateCommand(() => CurrentShowMode = ShowMode.Magic);
+        SetShowModeNextVersionCommand = new DelegateCommand(() => CurrentShowMode = ShowMode.NextVersion);
     }
 
     /// <summary>
@@ -124,6 +131,12 @@ public class MainWindowServerViewModel : ViewModelBase, IDisposable
         StartSendingCommand = new AsyncCommand(() => Task.CompletedTask);
         StopSendingCommand = new AsyncCommand(() => Task.CompletedTask);
         ResetPositionCommand = new AsyncCommand(() => Task.CompletedTask);
+
+        // ShowMode default and commands for design-time
+        CurrentShowMode = ShowMode.Debugging;
+        SetShowModeDebuggingCommand = new DelegateCommand(() => { });
+        SetShowModeMagicCommand = new DelegateCommand(() => { });
+        SetShowModeNextVersionCommand = new DelegateCommand(() => { });
     }
 
     protected override void OnInitializeInDesignMode()
@@ -159,6 +172,29 @@ public class MainWindowServerViewModel : ViewModelBase, IDisposable
     public ICommand StartSendingCommand { get; }
     public ICommand StopSendingCommand { get; }
     public ICommand ResetPositionCommand { get; }
+
+    // ShowMode commands
+    public ICommand SetShowModeDebuggingCommand { get; }
+    public ICommand SetShowModeMagicCommand { get; }
+    public ICommand SetShowModeNextVersionCommand { get; }
+
+    public ShowMode CurrentShowMode
+    {
+        get => _currentShowMode;
+        set
+        {
+            if (SetProperty(ref _currentShowMode, value, nameof(CurrentShowMode)))
+            {
+                // propagate to model
+                if (_model != null)
+                {
+                    _model.CurrentShowMode = value;
+                }
+            }
+        }
+    }
+
+    private ShowMode _currentShowMode = ShowMode.Debugging;
 
     /// <summary>
     /// Message shown in the status bar. When the client executable is missing this will contain a warning.
