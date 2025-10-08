@@ -13,10 +13,10 @@ using CommandLine.Text;
 
 using NamedPipeSync.Client.Models;
 using NamedPipeSync.Client.ViewModels;
-using NamedPipeSync.Client.UI;
 using NamedPipeSync.Common.Application;
 using NamedPipeSync.Common.Infrastructure;
 using NamedPipeSync.Common.Infrastructure.Protocol;
+using NamedPipeSync.Client.UI;
 
 using NLog;
 

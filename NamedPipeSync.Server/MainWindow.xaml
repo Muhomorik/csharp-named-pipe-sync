@@ -220,6 +220,13 @@
             <!-- Right actions: icon-only buttons -->
             <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" >
                 <Button Margin="8,0,0,0"
+                        ToolTip="Capture screen and restart clients"
+                        Command="{Binding CaptureScreenAndRestartClientsCommand}"
+                        Padding="8,6">
+                    <TextBlock Text="📸" FontSize="14"/>
+                </Button>
+                <Separator Margin="8,0,0,0" VerticalAlignment="Center"/>
+                <Button Margin="8,0,0,0"
                         ToolTip="Start sending"
                         Command="{Binding StartSendingCommand}"
                         Padding="8,6">

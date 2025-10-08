@@ -13,6 +13,7 @@ using NamedPipeSync.Common.Domain;
 using NamedPipeSync.Common.Domain.Events;
 using NamedPipeSync.Common.Infrastructure.Protocol;
 using NamedPipeSync.Server.Models;
+using NamedPipeSync.Server.Services;
 
 using NLog;
 
@@ -22,6 +23,8 @@ namespace NamedPipeSync.Server.ViewModels;
 
 public class MainWindowServerViewModel : ViewModelBase, IDisposable
 {
+    private readonly IWindowStateService _windowStateService;
+    private readonly IScreenCaptureService _screenCaptureService;
     private readonly ILogger _logger;
     private readonly IScheduler _uiScheduler;
     private readonly IMainWindowServerModel _model;
@@ -43,11 +46,15 @@ public class MainWindowServerViewModel : ViewModelBase, IDisposable
         ILogger logger,
         IScheduler uiScheduler,
         IMainWindowServerModel model,
+        IWindowStateService windowStateService,
+        IScreenCaptureService screenCaptureService,
         bool isClientExecutableMissing)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _model = model ?? throw new ArgumentNullException(nameof(model));
         _uiScheduler = uiScheduler ?? throw new ArgumentNullException(nameof(uiScheduler));
+        _windowStateService = windowStateService ?? throw new ArgumentNullException(nameof(windowStateService));
+        _screenCaptureService = screenCaptureService ?? throw new ArgumentNullException(nameof(screenCaptureService));
         _isClientExecutableMissing = isClientExecutableMissing;
 
         Title = "NamedPipeSync Server";
@@ -102,6 +109,7 @@ public class MainWindowServerViewModel : ViewModelBase, IDisposable
         StartSendingCommand = new AsyncCommand(StartSendingAsync);
         StopSendingCommand = new AsyncCommand(StopSendingAsync);
         ResetPositionCommand = new AsyncCommand(ResetPositionAsync);
+        CaptureScreenAndRestartClientsCommand = new AsyncCommand(CaptureScreenAndRestartClientsAsync);
 
         // Initialize ShowMode from model
         CurrentShowMode = _model.CurrentShowMode;
@@ -131,6 +139,7 @@ public class MainWindowServerViewModel : ViewModelBase, IDisposable
         StartSendingCommand = new AsyncCommand(() => Task.CompletedTask);
         StopSendingCommand = new AsyncCommand(() => Task.CompletedTask);
         ResetPositionCommand = new AsyncCommand(() => Task.CompletedTask);
+        CaptureScreenAndRestartClientsCommand = new AsyncCommand(() => Task.CompletedTask);
 
         // ShowMode default and commands for design-time
         CurrentShowMode = ShowMode.Debugging;
@@ -172,6 +181,9 @@ public class MainWindowServerViewModel : ViewModelBase, IDisposable
     public ICommand StartSendingCommand { get; }
     public ICommand StopSendingCommand { get; }
     public ICommand ResetPositionCommand { get; }
+
+    // New: capture screenshot and restart clients
+    public ICommand CaptureScreenAndRestartClientsCommand { get; }
 
     // ShowMode commands
     public ICommand SetShowModeDebuggingCommand { get; }
@@ -315,6 +327,43 @@ public class MainWindowServerViewModel : ViewModelBase, IDisposable
         {
             _logger.Error(ex);
         }
+    }
+
+    private async Task CaptureScreenAndRestartClientsAsync()
+    {
+        try
+        {
+            // 1) Save all open clients' ids
+            var connectedIds = Clients
+                .Where(c => c.Connection == ConnectionState.Connected)
+                .Select(c => new ClientId(c.Id))
+                .ToArray();
+
+            // 2) Close all open clients
+            await _model.CloseAllClientsAsync();
+
+            // 3) Minimize current window
+            await _windowStateService.MinimizeAsync();
+
+            // 4) Take screenshot (capture current screen as PNG bytes)
+            var pngBytes = await _screenCaptureService.CaptureCurrentScreenPngAsync();
+            _logger.Trace("Screenshot captured, size={0} bytes", pngBytes?.Length ?? 0);
+
+            // 5) Restore window
+            await _windowStateService.RestoreAsync();
+
+            // 6) Use saved client ids to start clients again
+            if (connectedIds.Length > 0)
+            {
+                await _model.StartManyAsync(connectedIds);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex);
+        }
+
+        // 7) TODO: persist screenshot to disk or attach to next message
     }
 
     public void Dispose()
