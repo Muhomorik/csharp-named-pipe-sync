@@ -112,6 +112,14 @@ public partial class App : Application
             .As<INamedPipeServer>()
             .SingleInstance();
 
+        // UI services
+        builder.RegisterType<WindowStateService>()
+            .As<IWindowStateService>()
+            .SingleInstance();
+        builder.RegisterType<ScreenCaptureService>()
+            .As<IScreenCaptureService>()
+            .SingleInstance();
+
         // Register runtime repository for clients
         builder.RegisterType<InMemoryClientWithRuntimeRepository>()
             .As<IClientWithRuntimeRepository>()
