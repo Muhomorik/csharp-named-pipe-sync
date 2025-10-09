@@ -106,6 +106,9 @@ public static class PipeSerialization
                     MessageType.ServerRequestsClientClose => JsonSerializer
                         .Deserialize<ServerRequestsClientCloseMessage>(json,
                             PipeProtocol.JsonOptions),
+                    MessageType.ServerSendsConfiguration => JsonSerializer
+                        .Deserialize<ServerSendsConfigurationMessage>(json,
+                            PipeProtocol.JsonOptions),
                     _ => null
                 };
             }
@@ -186,6 +189,8 @@ public static class PipeSerialization
                 MessageType.ServerSendsCoordinate => JsonSerializer.Deserialize<ServerSendsCoordinateMessage>(json,
                     PipeProtocol.JsonOptions),
                 MessageType.ServerRequestsClientClose => JsonSerializer.Deserialize<ServerRequestsClientCloseMessage>(
+                    json, PipeProtocol.JsonOptions),
+                MessageType.ServerSendsConfiguration => JsonSerializer.Deserialize<ServerSendsConfigurationMessage>(
                     json, PipeProtocol.JsonOptions),
                 _ => null // ignore client-to-server types
             };

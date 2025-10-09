@@ -5,5 +5,6 @@ public enum MessageType
     ClientSaysHello,
     ServerSendsCoordinate,
     ClientSaysBye,
-    ServerRequestsClientClose
+    ServerRequestsClientClose,
+    ServerSendsConfiguration
 }
