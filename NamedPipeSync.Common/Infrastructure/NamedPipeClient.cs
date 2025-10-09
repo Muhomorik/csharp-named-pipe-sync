@@ -15,6 +15,7 @@ public sealed class NamedPipeClient : INamedPipeClient
 
     private readonly Subject<ClientConnectionStateChange> _connectionChanged = new();
     private readonly Subject<Coordinate> _coordinates = new();
+    private readonly Subject<ServerSendsConfigurationMessage> _configuration = new();
     private readonly CancellationTokenSource _cts = new();
     private StreamReader? _reader;
     private Task? _readLoop;
@@ -30,13 +31,18 @@ public sealed class NamedPipeClient : INamedPipeClient
     public IObservable<Coordinate> Coordinates => _coordinates.AsObservable();
 
     /// <inheritdoc />
+    public IObservable<ServerSendsConfigurationMessage> ConfigurationReceived => _configuration.AsObservable();
+
+    /// <inheritdoc />
     public async ValueTask DisposeAsync()
     {
         await DisconnectAsync().ConfigureAwait(false);
         _connectionChanged?.OnCompleted();
         _coordinates?.OnCompleted();
+        _configuration?.OnCompleted();
         _connectionChanged.Dispose();
         _coordinates.Dispose();
+        _configuration.Dispose();
         GC.SuppressFinalize(this);
     }
 
@@ -45,8 +51,10 @@ public sealed class NamedPipeClient : INamedPipeClient
         DisconnectAsync().GetAwaiter().GetResult();
         _connectionChanged?.OnCompleted();
         _coordinates?.OnCompleted();
+        _configuration?.OnCompleted();
         _connectionChanged.Dispose();
         _coordinates.Dispose();
+        _configuration.Dispose();
         GC.SuppressFinalize(this);
     }
 
@@ -195,6 +203,10 @@ public sealed class NamedPipeClient : INamedPipeClient
                 if (msg is ServerSendsCoordinateMessage coord && coord.ClientId == _clientId.Id)
                 {
                     _coordinates.OnNext(new Coordinate(coord.X, coord.Y));
+                }
+                else if (msg is ServerSendsConfigurationMessage cfg && cfg.ClientId == _clientId.Id)
+                {
+                    _configuration.OnNext(cfg);
                 }
                 else if (msg is ServerRequestsClientCloseMessage close && close.ClientId == _clientId.Id)
                 {

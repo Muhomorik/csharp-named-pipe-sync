@@ -28,6 +28,12 @@ public interface INamedPipeClient : IAsyncDisposable, IDisposable
     IObservable<Coordinate> Coordinates { get; }
 
     /// <summary>
+    ///     Stream of initial configuration messages sent by the server immediately after handshake.
+    ///     Consumers should observe on the UI scheduler if updating UI-bound state.
+    /// </summary>
+    IObservable<ServerSendsConfigurationMessage> ConfigurationReceived { get; }
+
+    /// <summary>
     ///     Attempts to discover and connect to the server, retrying until success or cancellation.
     /// </summary>
     /// <param name="retryDelay">

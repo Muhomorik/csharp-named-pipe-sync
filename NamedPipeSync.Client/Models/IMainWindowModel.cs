@@ -42,4 +42,9 @@ public interface IMainWindowModel
     /// Observable stream for coordinate updates destined for this client.
     /// </summary>
     IObservable<Coordinate> Coordinates { get; }
+
+    /// <summary>
+    /// Observable stream of server-sent configuration messages received after handshake.
+    /// </summary>
+    IObservable<NamedPipeSync.Common.Infrastructure.Protocol.ServerSendsConfigurationMessage> ConfigurationReceived { get; }
 }

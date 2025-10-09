@@ -52,4 +52,7 @@ public class MainWindowModel : IMainWindowModel
 
     /// <inheritdoc />
     public IObservable<Coordinate> Coordinates => _pipeClient.Coordinates;
+
+    /// <inheritdoc />
+    public IObservable<NamedPipeSync.Common.Infrastructure.Protocol.ServerSendsConfigurationMessage> ConfigurationReceived => _pipeClient.ConfigurationReceived;
 }

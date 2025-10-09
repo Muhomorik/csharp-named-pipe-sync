@@ -13,6 +13,8 @@ internal sealed class DesignTimePipeClient : INamedPipeClient
 
     public IObservable<Coordinate> Coordinates { get; } = Observable.Empty<Coordinate>();
 
+    public IObservable<NamedPipeSync.Common.Infrastructure.Protocol.ServerSendsConfigurationMessage> ConfigurationReceived { get; } = Observable.Empty<NamedPipeSync.Common.Infrastructure.Protocol.ServerSendsConfigurationMessage>();
+
     public Task ConnectAsync(TimeSpan? retryDelay = null, CancellationToken ct = default) => Task.CompletedTask;
 
     public Task SendByeAsync(CancellationToken ct = default) => Task.CompletedTask;

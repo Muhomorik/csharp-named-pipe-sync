@@ -26,6 +26,7 @@ public class MainWindowClientViewModel : ViewModelBase, IDisposable
     private readonly ILogger _logger;
     private readonly IMainWindowModel _model;
     private readonly IScheduler _uiScheduler;
+    private readonly NamedPipeSync.Common.Application.Imaging.IImageBase64Converter _imageConverter;
 
     private readonly CompositeDisposable _disposables = new();
     private string _title = "VM: Client Window";
@@ -75,11 +76,13 @@ public class MainWindowClientViewModel : ViewModelBase, IDisposable
     public MainWindowClientViewModel(
         ILogger logger,
         IMainWindowModel model,
-        IScheduler uiScheduler)
+        IScheduler uiScheduler,
+        Common.Application.Imaging.IImageBase64Converter imageBase64Converter)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _model = model ?? throw new ArgumentNullException(nameof(model));
         _uiScheduler = uiScheduler ?? throw new ArgumentNullException(nameof(uiScheduler));
+        _imageConverter = imageBase64Converter ?? throw new ArgumentNullException(nameof(imageBase64Converter));
 
         ExitCommand = new DelegateCommand(OnExit);
         ConnectCommand = new DelegateCommand(async () => await OnConnectAsync());
@@ -105,6 +108,7 @@ public class MainWindowClientViewModel : ViewModelBase, IDisposable
             new DesignTimeApplicationLifetime(),
             new DesignTimePipeClient());
         _uiScheduler = CurrentThreadScheduler.Instance;
+        _imageConverter = new NamedPipeSync.Common.Application.Imaging.ImageBase64Converter();
 
         ExitCommand = new DelegateCommand(() => { });
         ConnectCommand = new DelegateCommand(() => { });
@@ -185,6 +189,23 @@ public class MainWindowClientViewModel : ViewModelBase, IDisposable
         _disposables.Add(_model.Coordinates
             .ObserveOn(_uiScheduler)
             .Subscribe(c => Title = $"Client {_model.GetClientId()}: ({c.X:0.###}, {c.Y:0.###})"));
+
+        // Handle server-sent configuration: update background image and caption
+        _disposables.Add(
+            _model.ConfigurationReceived
+                .ObserveOn(_uiScheduler)
+                .Subscribe(cfg =>
+                {
+                    try
+                    {
+                        BackgroundImage = _imageConverter.Base64ToWriteableBitmap(cfg.ScreenshotBase64);
+                        ClientText = $"Client {_model.GetClientId()} | Start CP: {cfg.StartingCheckpoint.Id} | {cfg.TimestampUtc:HH:mm:ss}";
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.Error(ex);
+                    }
+                }));
 
         // While coordinates are being received, hide the border/caption (BorderIsVisible = false).
         // If no coordinate arrives for 5 seconds, emit true to show the border again.
