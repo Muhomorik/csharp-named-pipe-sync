@@ -13,6 +13,16 @@ namespace NamedPipeSync.Common.Infrastructure;
 /// <inheritdoc cref="INamedPipeServer" />
 public sealed class NamedPipeServer : INamedPipeServer
 {
+    private readonly Lazy<IServerConfigurationProvider>? _configurationProvider;
+
+    public NamedPipeServer()
+    {
+    }
+
+    public NamedPipeServer(Lazy<IServerConfigurationProvider> configurationProvider)
+    {
+        _configurationProvider = configurationProvider ?? throw new ArgumentNullException(nameof(configurationProvider));
+    }
     private readonly ConcurrentDictionary<ClientId, ClientConnection> _clients = new();
 
     private readonly Subject<ClientConnectionChange> _connectionChanged = new();
@@ -179,6 +189,23 @@ public sealed class NamedPipeServer : INamedPipeServer
             }
 
             _connectionChanged.OnNext(new ClientConnectionChange(clientId, ConnectionState.Connected));
+
+            // Immediately send configuration to the client if a provider is available
+            if (_configurationProvider is not null)
+            {
+                try
+                {
+                    var cfg = _configurationProvider.Value.BuildConfigurationFor(clientId);
+                    if (connection is not null)
+                    {
+                        await connection.SendAsync(cfg, ct).ConfigureAwait(false);
+                    }
+                }
+                catch
+                {
+                    // ignore configuration send errors to avoid dropping the connection
+                }
+            }
 
             // Keep reading for polite bye or to detect disconnect
             while (!ct.IsCancellationRequested && stream.IsConnected)

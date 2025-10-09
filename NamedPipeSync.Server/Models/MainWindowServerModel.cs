@@ -18,7 +18,7 @@ namespace NamedPipeSync.Server.Models;
 ///     SERVER. Default implementation of <see cref="IMainWindowServerModel"/>.
 ///     Contains non-UI orchestration used by the Server Main Window.
 /// </summary>
-public sealed class MainWindowServerModel : IMainWindowServerModel
+public sealed class MainWindowServerModel : IMainWindowServerModel, IServerConfigurationProvider
 {
     private string _lastScreenshotBase64 = string.Empty;
     private readonly ILogger _logger;
@@ -204,5 +204,25 @@ public sealed class MainWindowServerModel : IMainWindowServerModel
             _logger.Error(ex);
             return string.Empty;
         }
+    }
+
+    // IServerConfigurationProvider implementation: build initial configuration for a client right after handshake
+    public ServerSendsConfigurationMessage BuildConfigurationFor(ClientId clientId)
+    {
+        // Determine a starting checkpoint consistent with EnsureClientEntryOnConnectionChange logic
+        var cp = Checkpoints.Start.FirstOrDefault(c => c.Id == clientId.Id);
+        if (cp.Id == 0 && Checkpoints.Start.Count > 0)
+        {
+            cp = Checkpoints.Start[0];
+        }
+
+        // Timestamp in UTC and latest screenshot base64 (may be empty)
+        return new ServerSendsConfigurationMessage
+        {
+            ClientId = clientId.Id,
+            StartingCheckpoint = cp,
+            ScreenshotBase64 = _lastScreenshotBase64 ?? string.Empty,
+            TimestampUtc = DateTime.UtcNow
+        };
     }
 }

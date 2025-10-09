@@ -18,6 +18,7 @@ using Autofac.Core.Resolving.Pipeline;
 using NamedPipeSync.Common.Application;
 using NamedPipeSync.Common.Infrastructure;
 using NamedPipeSync.Common.Application.Imaging;
+using NamedPipeSync.Server.Models;
 
 namespace NamedPipeSync.Server;
 
@@ -109,6 +110,11 @@ public partial class App : Application
         builder.RegisterType<MainWindow>();
 
         // Register server implementation and related services
+        builder.RegisterType<MainWindowServerModel>()
+            .As<IMainWindowServerModel>()
+            .As<IServerConfigurationProvider>()
+            .SingleInstance();
+
         builder.RegisterType<NamedPipeServer>()
             .As<INamedPipeServer>()
             .SingleInstance();
