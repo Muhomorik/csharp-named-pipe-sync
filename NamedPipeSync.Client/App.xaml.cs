@@ -17,6 +17,7 @@ using NamedPipeSync.Common.Application;
 using NamedPipeSync.Common.Infrastructure;
 using NamedPipeSync.Common.Infrastructure.Protocol;
 using NamedPipeSync.Client.UI;
+using NamedPipeSync.Common.Application.Imaging;
 
 using NLog;
 
@@ -128,6 +129,11 @@ public partial class App : Application
             .SingleInstance();
         builder.RegisterType<ScreenCaptureService>()
             .As<IScreenCaptureService>()
+            .SingleInstance();
+
+        // Imaging
+        builder.RegisterType<ImageBase64Converter>()
+            .As<IImageBase64Converter>()
             .SingleInstance();
 
         // Application lifetime service (allows VMs to request shutdown without WPF dependency)

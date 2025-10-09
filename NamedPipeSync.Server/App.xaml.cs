@@ -17,6 +17,7 @@ using Autofac.Core.Resolving.Pipeline;
 
 using NamedPipeSync.Common.Application;
 using NamedPipeSync.Common.Infrastructure;
+using NamedPipeSync.Common.Application.Imaging;
 
 namespace NamedPipeSync.Server;
 
@@ -118,6 +119,11 @@ public partial class App : Application
             .SingleInstance();
         builder.RegisterType<ScreenCaptureService>()
             .As<IScreenCaptureService>()
+            .SingleInstance();
+
+        // Imaging
+        builder.RegisterType<ImageBase64Converter>()
+            .As<IImageBase64Converter>()
             .SingleInstance();
 
         // Register runtime repository for clients

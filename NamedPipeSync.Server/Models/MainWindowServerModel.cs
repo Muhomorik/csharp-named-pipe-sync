@@ -10,6 +10,7 @@ using NamedPipeSync.Common.Domain.Events;
 using NamedPipeSync.Common.Infrastructure.Protocol;
 using NamedPipeSync.Server.Services;
 using NLog;
+using NamedPipeSync.Common.Application.Imaging;
 
 namespace NamedPipeSync.Server.Models;
 
@@ -25,6 +26,7 @@ public sealed class MainWindowServerModel : IMainWindowServerModel
     private readonly IClientWithRuntimeEventDispatcher _events;
     private readonly IClientProcessLauncher _launcher;
     private readonly ICoordinatesSendScheduler _scheduler;
+    private readonly IImageBase64Converter _imageBase64Converter;
 
     private ShowMode _currentShowMode = ShowMode.Debugging;
 
@@ -52,7 +54,8 @@ public sealed class MainWindowServerModel : IMainWindowServerModel
         IClientWithRuntimeRepository repository,
         IClientWithRuntimeEventDispatcher events,
         IClientProcessLauncher launcher,
-        ICoordinatesSendScheduler scheduler)
+        ICoordinatesSendScheduler scheduler,
+        IImageBase64Converter imageBase64Converter)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _server = server ?? throw new ArgumentNullException(nameof(server));
@@ -60,6 +63,7 @@ public sealed class MainWindowServerModel : IMainWindowServerModel
         _events = events ?? throw new ArgumentNullException(nameof(events));
         _launcher = launcher ?? throw new ArgumentNullException(nameof(launcher));
         _scheduler = scheduler ?? throw new ArgumentNullException(nameof(scheduler));
+        _imageBase64Converter = imageBase64Converter ?? throw new ArgumentNullException(nameof(imageBase64Converter));
     }
 
     public void StartServer() => _server.Start();
@@ -137,5 +141,33 @@ public sealed class MainWindowServerModel : IMainWindowServerModel
     public Task ResetPositionAsync(CancellationToken ct = default)
     {
         return _scheduler.ResetPositionAsync(ct);
+    }
+
+    public IReadOnlyCollection<ClientId> GetCurrentlyConnectedClientIds()
+    {
+        return _server.ConnectedClientIds;
+    }
+
+    public async Task<string> ProcessScreenshotAndRestartAsync(byte[] pngBytes, IEnumerable<ClientId> reconnectIds, CancellationToken ct = default)
+    {
+        try
+        {
+            var base64 = (pngBytes is { Length: > 0 })
+                ? _imageBase64Converter.PngBytesToBase64(pngBytes)
+                : string.Empty;
+
+            var ids = reconnectIds?.ToArray() ?? Array.Empty<ClientId>();
+            if (ids.Length > 0)
+            {
+                await _launcher.StartManyAsync(ids, ct).ConfigureAwait(false);
+            }
+
+            return base64;
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex);
+            return string.Empty;
+        }
     }
 }

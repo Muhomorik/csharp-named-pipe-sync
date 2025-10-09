@@ -8,7 +8,7 @@ namespace NamedPipeSync.Common.Application.Imaging;
 /// Provides helper methods to convert images to and from Base64 strings for transport over the wire.
 /// Intended for scenarios where the server sends PNG-encoded images to clients and the client renders them.
 /// </summary>
-public static class ImageBase64Converter
+public sealed class ImageBase64Converter : IImageBase64Converter
 {
     /// <summary>
     /// Encodes a WPF <see cref="BitmapSource"/> into PNG format and returns a Base64 string.
@@ -16,7 +16,7 @@ public static class ImageBase64Converter
     /// <param name="bitmap">The source bitmap to encode. Must not be null and must be freezable or accessible on the calling thread.</param>
     /// <returns>A Base64 string representing the PNG-encoded image. Never null; may be empty only if the image has zero bytes.</returns>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="bitmap"/> is null.</exception>
-    public static string BitmapSourceToBase64Png(BitmapSource bitmap)
+    public string BitmapSourceToBase64Png(BitmapSource bitmap)
     {
         if (bitmap is null) throw new ArgumentNullException(nameof(bitmap));
 
@@ -33,7 +33,7 @@ public static class ImageBase64Converter
     /// <param name="pngBytes">Raw PNG data. Must not be null.</param>
     /// <returns>Base64 string for the provided PNG bytes.</returns>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="pngBytes"/> is null.</exception>
-    public static string PngBytesToBase64(byte[] pngBytes)
+    public string PngBytesToBase64(byte[] pngBytes)
     {
         if (pngBytes is null) throw new ArgumentNullException(nameof(pngBytes));
         return Convert.ToBase64String(pngBytes);
@@ -46,7 +46,7 @@ public static class ImageBase64Converter
     /// <returns>A frozen <see cref="WriteableBitmap"/> that can be assigned to Image.Source or drawn onto.</returns>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="base64"/> is null.</exception>
     /// <exception cref="FormatException">Thrown if <paramref name="base64"/> is not a valid Base64 string.</exception>
-    public static WriteableBitmap Base64ToWriteableBitmap(string base64)
+    public WriteableBitmap Base64ToWriteableBitmap(string base64)
     {
         if (base64 is null) throw new ArgumentNullException(nameof(base64));
         if (string.IsNullOrWhiteSpace(base64))

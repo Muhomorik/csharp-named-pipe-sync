@@ -132,4 +132,19 @@ public interface IMainWindowServerModel
     /// Current server-wide show mode preset. Changing this value should not produce UI side effects here; it is an application-level state.
     /// </summary>
     ShowMode CurrentShowMode { get; set; }
+
+    /// <summary>
+    /// Returns a snapshot of the currently connected client identifiers from the server transport.
+    /// UI should not infer connection state from UI-bound collections; use this authoritative source instead.
+    /// </summary>
+    IReadOnlyCollection<ClientId> GetCurrentlyConnectedClientIds();
+
+    /// <summary>
+    /// Processes a captured screenshot by converting PNG bytes to Base64 and restarts the specified clients.
+    /// </summary>
+    /// <param name="pngBytes">Raw PNG bytes captured from the screen. May be null or empty; null/empty results in an empty string.</param>
+    /// <param name="reconnectIds">Client ids to restart after processing the screenshot. May be empty.</param>
+    /// <param name="ct">Cancellation token to cancel the restart operation.</param>
+    /// <returns>The Base64 PNG string produced from the provided bytes. Never null (empty string on null/empty input).</returns>
+    Task<string> ProcessScreenshotAndRestartAsync(byte[] pngBytes, IEnumerable<ClientId> reconnectIds, CancellationToken ct = default);
 }

@@ -34,11 +34,13 @@ public sealed class ClientWithRuntime
         Id = id;
         Connection = ConnectionState.Disconnected;
         Coordinates = new Coordinate(0, 0);
+        StartingCheckpoint = startingCheckpoint;
         LastCheckpoint = startingCheckpoint;
         MovingToCheckpoint = startingCheckpoint;
         _isOnCheckpoint = false;
         RenderCheckpoint = renderCheckpoint;
     }
+
 
     /// <summary>
     ///     Unique client identifier.
@@ -55,6 +57,12 @@ public sealed class ClientWithRuntime
     /// </summary>
     public Coordinate Coordinates { get; set; }
 
+    /// <summary>
+    /// The checkpoint where the client starts when initialized.
+    /// Is never changed.
+    /// </summary>
+    public Checkpoint StartingCheckpoint { get; set; }
+    
     /// <summary>
     ///     The last checkpoint that the client has reached. Never null by design.
     /// </summary>

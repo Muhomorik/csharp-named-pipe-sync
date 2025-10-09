@@ -12,6 +12,7 @@ using NamedPipeSync.Common.Application;
 using NamedPipeSync.Common.Domain;
 using NamedPipeSync.Common.Domain.Events;
 using NamedPipeSync.Common.Infrastructure.Protocol;
+using NamedPipeSync.Common.Application.Imaging;
 using NamedPipeSync.Server.Models;
 using NamedPipeSync.Server.Services;
 
@@ -28,6 +29,7 @@ public class MainWindowServerViewModel : ViewModelBase, IDisposable
     private readonly ILogger _logger;
     private readonly IScheduler _uiScheduler;
     private readonly IMainWindowServerModel _model;
+    private readonly IImageBase64Converter _imageBase64Converter;
     private readonly CompositeDisposable _disposables = new();
 
     private string _title = "Server";
@@ -48,6 +50,7 @@ public class MainWindowServerViewModel : ViewModelBase, IDisposable
         IMainWindowServerModel model,
         IWindowStateService windowStateService,
         IScreenCaptureService screenCaptureService,
+        IImageBase64Converter imageBase64Converter,
         bool isClientExecutableMissing)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -55,6 +58,7 @@ public class MainWindowServerViewModel : ViewModelBase, IDisposable
         _uiScheduler = uiScheduler ?? throw new ArgumentNullException(nameof(uiScheduler));
         _windowStateService = windowStateService ?? throw new ArgumentNullException(nameof(windowStateService));
         _screenCaptureService = screenCaptureService ?? throw new ArgumentNullException(nameof(screenCaptureService));
+        _imageBase64Converter = imageBase64Converter ?? throw new ArgumentNullException(nameof(imageBase64Converter));
         _isClientExecutableMissing = isClientExecutableMissing;
 
         Title = "NamedPipeSync Server";
@@ -209,6 +213,17 @@ public class MainWindowServerViewModel : ViewModelBase, IDisposable
     private ShowMode _currentShowMode = ShowMode.Debugging;
 
     /// <summary>
+    /// Holds the last captured screenshot as a Base64 PNG string. Initially empty string.
+    /// </summary>
+    public string ScreenshotBase64
+    {
+        get => _screenshotBase64;
+        private set => SetProperty(ref _screenshotBase64, value, nameof(ScreenshotBase64));
+    }
+
+    private string _screenshotBase64 = string.Empty;
+
+    /// <summary>
     /// Message shown in the status bar. When the client executable is missing this will contain a warning.
     /// </summary>
     public string StatusBarMessage => _isClientExecutableMissing
@@ -333,37 +348,30 @@ public class MainWindowServerViewModel : ViewModelBase, IDisposable
     {
         try
         {
-            // 1) Save all open clients' ids
-            var connectedIds = Clients
-                .Where(c => c.Connection == ConnectionState.Connected)
-                .Select(c => new ClientId(c.Id))
-                .ToArray();
+            // Determine which clients were connected prior to capture via model (authoritative source).
+            var connectedIds = _model.GetCurrentlyConnectedClientIds().ToArray();
 
-            // 2) Close all open clients
+            // Request model to close all clients before capturing.
             await _model.CloseAllClientsAsync();
 
-            // 3) Minimize current window
+            // Minimize the window via UI service before capture to avoid capturing the app UI.
             await _windowStateService.MinimizeAsync();
 
-            // 4) Take screenshot (capture current screen as PNG bytes)
+            // Capture current screen as PNG bytes via service.
             var pngBytes = await _screenCaptureService.CaptureCurrentScreenPngAsync();
             _logger.Trace("Screenshot captured, size={0} bytes", pngBytes?.Length ?? 0);
 
-            // 5) Restore window
+            // Restore the window after capture completes.
             await _windowStateService.RestoreAsync();
 
-            // 6) Use saved client ids to start clients again
-            if (connectedIds.Length > 0)
-            {
-                await _model.StartManyAsync(connectedIds);
-            }
+            // Delegate processing (Base64 conversion) and client restarts to the model.
+            var base64 = await _model.ProcessScreenshotAndRestartAsync(pngBytes, connectedIds);
+            ScreenshotBase64 = base64;
         }
         catch (Exception ex)
         {
             _logger.Error(ex);
         }
-
-        // 7) TODO: persist screenshot to disk or attach to next message
     }
 
     public void Dispose()
