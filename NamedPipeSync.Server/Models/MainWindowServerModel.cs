@@ -20,6 +20,7 @@ namespace NamedPipeSync.Server.Models;
 /// </summary>
 public sealed class MainWindowServerModel : IMainWindowServerModel
 {
+    private string _lastScreenshotBase64 = string.Empty;
     private readonly ILogger _logger;
     private readonly INamedPipeServer _server;
     private readonly IClientWithRuntimeRepository _repository;
@@ -27,6 +28,8 @@ public sealed class MainWindowServerModel : IMainWindowServerModel
     private readonly IClientProcessLauncher _launcher;
     private readonly ICoordinatesSendScheduler _scheduler;
     private readonly IImageBase64Converter _imageBase64Converter;
+    private readonly IWindowStateService _windowStateService;
+    private readonly IScreenCaptureService _screenCaptureService;
 
     private ShowMode _currentShowMode = ShowMode.Debugging;
 
@@ -55,7 +58,9 @@ public sealed class MainWindowServerModel : IMainWindowServerModel
         IClientWithRuntimeEventDispatcher events,
         IClientProcessLauncher launcher,
         ICoordinatesSendScheduler scheduler,
-        IImageBase64Converter imageBase64Converter)
+        IImageBase64Converter imageBase64Converter,
+        IWindowStateService windowStateService,
+        IScreenCaptureService screenCaptureService)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _server = server ?? throw new ArgumentNullException(nameof(server));
@@ -64,6 +69,8 @@ public sealed class MainWindowServerModel : IMainWindowServerModel
         _launcher = launcher ?? throw new ArgumentNullException(nameof(launcher));
         _scheduler = scheduler ?? throw new ArgumentNullException(nameof(scheduler));
         _imageBase64Converter = imageBase64Converter ?? throw new ArgumentNullException(nameof(imageBase64Converter));
+        _windowStateService = windowStateService ?? throw new ArgumentNullException(nameof(windowStateService));
+        _screenCaptureService = screenCaptureService ?? throw new ArgumentNullException(nameof(screenCaptureService));
     }
 
     public void StartServer() => _server.Start();
@@ -148,6 +155,33 @@ public sealed class MainWindowServerModel : IMainWindowServerModel
         return _server.ConnectedClientIds;
     }
 
+    public async Task CaptureScreenAndRestartClientsAsync(CancellationToken ct = default)
+    {
+        try
+        {
+            // Determine which clients were connected prior to capture via authoritative source (server).
+            var connectedIds = _server.ConnectedClientIds.ToArray();
+
+            // Request to close all clients before capturing.
+            await CloseAllClientsAsync(ct).ConfigureAwait(false);
+
+            // Minimize window to avoid capturing app UI, then capture the screen.
+            await _windowStateService.MinimizeAsync().ConfigureAwait(false);
+            var pngBytes = await _screenCaptureService.CaptureCurrentScreenPngAsync().ConfigureAwait(false);
+            _logger.Trace("Screenshot captured, size={0} bytes", pngBytes?.Length ?? 0);
+
+            // Restore window after capture.
+            await _windowStateService.RestoreAsync().ConfigureAwait(false);
+
+            // Delegate processing and restart.
+            await ProcessScreenshotAndRestartAsync(pngBytes, connectedIds, ct).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex);
+        }
+    }
+
     public async Task<string> ProcessScreenshotAndRestartAsync(byte[] pngBytes, IEnumerable<ClientId> reconnectIds, CancellationToken ct = default)
     {
         try
@@ -155,6 +189,7 @@ public sealed class MainWindowServerModel : IMainWindowServerModel
             var base64 = (pngBytes is { Length: > 0 })
                 ? _imageBase64Converter.PngBytesToBase64(pngBytes)
                 : string.Empty;
+            _lastScreenshotBase64 = base64;
 
             var ids = reconnectIds?.ToArray() ?? Array.Empty<ClientId>();
             if (ids.Length > 0)

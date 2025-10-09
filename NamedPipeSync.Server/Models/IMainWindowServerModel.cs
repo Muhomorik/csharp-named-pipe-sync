@@ -147,4 +147,13 @@ public interface IMainWindowServerModel
     /// <param name="ct">Cancellation token to cancel the restart operation.</param>
     /// <returns>The Base64 PNG string produced from the provided bytes. Never null (empty string on null/empty input).</returns>
     Task<string> ProcessScreenshotAndRestartAsync(byte[] pngBytes, IEnumerable<ClientId> reconnectIds, CancellationToken ct = default);
+
+    /// <summary>
+    /// Orchestrates the full capture-and-restart workflow: determines connected clients, closes all clients,
+    /// minimizes the window, captures the current screen as PNG bytes, restores the window, and then processes
+    /// the screenshot and restarts the previously connected clients.
+    /// </summary>
+    /// <param name="ct">Cancellation token to cancel the operation cooperatively.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    Task CaptureScreenAndRestartClientsAsync(CancellationToken ct = default);
 }
