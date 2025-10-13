@@ -1,12 +1,13 @@
 ﻿using System;
 using NamedPipeSync.Common.Domain;
+using NamedPipeSync.Common.Application;
 
 namespace NamedPipeSync.Common.Infrastructure.Protocol;
 
 /// <summary>
 /// Server-to-client message carrying initial configuration for a client session.
 /// Includes the client's starting checkpoint, an optional PNG image encoded as Base64,
-/// and a UTC timestamp indicating when the configuration was produced.
+/// a ShowMode preset the server wants the client to use, and a UTC timestamp indicating when the configuration was produced.
 /// </summary>
 public sealed record ServerSendsConfigurationMessage : PipeMessage, IServerToClientMessage
 {
@@ -22,6 +23,11 @@ public sealed record ServerSendsConfigurationMessage : PipeMessage, IServerToCli
     /// Empty string means no image.
     /// </summary>
     public string ScreenshotBase64 { get; init; } = string.Empty;
+
+    /// <summary>
+    /// The high-level show/preset mode the server wants the client to apply.
+    /// </summary>
+    public ShowMode ShowMode { get; init; }
 
     /// <summary>
     /// UTC timestamp when the configuration was created on the server.
