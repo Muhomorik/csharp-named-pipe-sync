@@ -222,7 +222,6 @@ public sealed class MainWindowServerModel : IMainWindowServerModel, IServerConfi
             ClientId = clientId.Id,
             StartingCheckpoint = cp,
             ScreenshotBase64 = _lastScreenshotBase64 ?? string.Empty,
-            ShowMode = _currentShowMode,
             TimestampUtc = DateTime.UtcNow
         };
     }

@@ -30,6 +30,8 @@ public class MainWindowClientViewModel : ViewModelBase, IDisposable
 
     private readonly CompositeDisposable _disposables = new();
     private string _title = "VM: Client Window";
+    private double _windowLeft;
+    private double _windowTop;
 
     // Background image bound from the ViewModel to the View (explicit WriteableBitmap)
     private WriteableBitmap _backgroundImage;
@@ -133,6 +135,18 @@ public class MainWindowClientViewModel : ViewModelBase, IDisposable
         set => SetProperty(ref _title, value, nameof(Title));
     }
 
+    public double WindowLeft
+    {
+        get => _windowLeft;
+        set => SetProperty(ref _windowLeft, value, nameof(WindowLeft));
+    }
+
+    public double WindowTop
+    {
+        get => _windowTop;
+        set => SetProperty(ref _windowTop, value, nameof(WindowTop));
+    }
+
     // Desired content/client size exposed to the ViewModel (client area width/height).
     // These represent the size of the content area (the Grid inside the window).
     private double _windowContentWidth = 288;
@@ -200,6 +214,10 @@ public class MainWindowClientViewModel : ViewModelBase, IDisposable
                     {
                         BackgroundImage = _imageConverter.Base64ToWriteableBitmap(cfg.ScreenshotBase64);
                         ClientText = $"Client {_model.GetClientId()} | Start CP: {cfg.StartingCheckpoint.Id} | {cfg.TimestampUtc:HH:mm:ss}";
+
+                        // Position the window according to the starting checkpoint's location
+                        WindowLeft = cfg.StartingCheckpoint.Location.X;
+                        WindowTop = cfg.StartingCheckpoint.Location.Y;
                     }
                     catch (Exception ex)
                     {

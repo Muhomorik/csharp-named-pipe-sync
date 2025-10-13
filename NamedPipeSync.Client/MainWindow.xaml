@@ -8,7 +8,9 @@
                  xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
                  mc:Ignorable="d"
                  d:DataContext="{d:DesignInstance Type=viewModels:MainWindowClientViewModel, IsDesignTimeCreatable=True}"
-                 Title="{Binding Title}">
+                 Title="{Binding Title}"
+                 Left="{Binding WindowLeft, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                 Top="{Binding WindowTop, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
     <!-- Background bound to an ImageBrush (via ImageSource) -->
     <mah:MetroWindow.Background>
         <ImageBrush ImageSource="{Binding BackgroundImage}"
