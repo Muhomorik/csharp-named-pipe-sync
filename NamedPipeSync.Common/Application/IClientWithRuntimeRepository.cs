@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using NamedPipeSync.Common.Domain;
+﻿using NamedPipeSync.Common.Domain;
 using NamedPipeSync.Common.Infrastructure.Protocol;
 
 namespace NamedPipeSync.Common.Application;

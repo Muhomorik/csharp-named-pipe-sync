@@ -3,13 +3,17 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+
 using JetBrains.Annotations;
+
 using NamedPipeSync.Common.Application;
 using NamedPipeSync.Common.Domain;
 using NamedPipeSync.Common.Domain.Events;
 using NamedPipeSync.Common.Infrastructure.Protocol;
 using NamedPipeSync.Server.Services;
+
 using NLog;
+
 using NamedPipeSync.Common.Application.Imaging;
 
 namespace NamedPipeSync.Server.Models;
@@ -50,6 +54,10 @@ public sealed class MainWindowServerModel : IMainWindowServerModel, IServerConfi
     /// <param name="repository">Runtime repository for clients. Must not be null.</param>
     /// <param name="events">Domain event dispatcher. Must not be null.</param>
     /// <param name="launcher">Client process launcher. Must not be null.</param>
+    /// <param name="scheduler"></param>
+    /// <param name="imageBase64Converter"></param>
+    /// <param name="windowStateService"></param>
+    /// <param name="screenCaptureService"></param>
     [UsedImplicitly]
     public MainWindowServerModel(
         ILogger logger,
@@ -119,7 +127,8 @@ public sealed class MainWindowServerModel : IMainWindowServerModel, IServerConfi
 
     public void StartClient(ClientId id) => _launcher.StartClient(id);
 
-    public Task StartManyAsync(IEnumerable<ClientId> ids, CancellationToken ct = default) => _launcher.StartManyAsync(ids, ct);
+    public Task StartManyAsync(IEnumerable<ClientId> ids, CancellationToken ct = default) =>
+        _launcher.StartManyAsync(ids, ct);
 
     public async Task CloseAllClientsAsync(CancellationToken ct = default)
     {
@@ -182,7 +191,8 @@ public sealed class MainWindowServerModel : IMainWindowServerModel, IServerConfi
         }
     }
 
-    public async Task<string> ProcessScreenshotAndRestartAsync(byte[] pngBytes, IEnumerable<ClientId> reconnectIds, CancellationToken ct = default)
+    public async Task<string> ProcessScreenshotAndRestartAsync(byte[] pngBytes, IEnumerable<ClientId> reconnectIds,
+        CancellationToken ct = default)
     {
         try
         {
@@ -206,14 +216,27 @@ public sealed class MainWindowServerModel : IMainWindowServerModel, IServerConfi
         }
     }
 
-    // IServerConfigurationProvider implementation: build initial configuration for a client right after handshake
+    /// <summary>
+    /// Builds a server configuration message for the specified client.
+    /// </summary>
+    /// <param name="clientId">The ID of the client for which the configuration is being built. Must not be null.</param>
+    /// <returns>A <see cref="ServerSendsConfigurationMessage"/> containing configuration data for the client.</returns>
     public ServerSendsConfigurationMessage BuildConfigurationFor(ClientId clientId)
     {
-        // Determine a starting checkpoint consistent with EnsureClientEntryOnConnectionChange logic
-        var cp = Checkpoints.Start.FirstOrDefault(c => c.Id == clientId.Id);
-        if (cp.Id == 0 && Checkpoints.Start.Count > 0)
+        // Prefer StartingCheckpoint from repository (authoritative per runtime state)
+        Checkpoint cp;
+        if (_repository.TryGet(clientId, out var client) && client is not null)
         {
-            cp = Checkpoints.Start[0];
+            cp = client.StartingCheckpoint;
+        }
+        else
+        {
+            // Fallback to configured checkpoints consistent with EnsureClientEntryOnConnectionChange logic
+            cp = Checkpoints.Start.FirstOrDefault(c => c.Id == clientId.Id);
+            if (cp.Id == 0 && Checkpoints.Start.Count > 0)
+            {
+                cp = Checkpoints.Start[0];
+            }
         }
 
         // Timestamp in UTC and latest screenshot base64 (may be empty)
