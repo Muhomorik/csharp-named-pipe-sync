@@ -135,6 +135,9 @@ public partial class App : Application
         builder.RegisterType<ImageBase64Converter>()
             .As<IImageBase64Converter>()
             .SingleInstance();
+        builder.RegisterType<ImageProcessingService>()
+            .As<IImageProcessingService>()
+            .SingleInstance();
 
         // Application lifetime service (allows VMs to request shutdown without WPF dependency)
         builder.RegisterType<ApplicationLifetime>()

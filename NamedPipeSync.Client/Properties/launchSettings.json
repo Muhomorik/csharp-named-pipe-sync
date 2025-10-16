@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "NamedPipeSync.Client": {
+      "commandName": "Project",
+      "commandLineArgs": "--id=1"
+    }
+  }
+}

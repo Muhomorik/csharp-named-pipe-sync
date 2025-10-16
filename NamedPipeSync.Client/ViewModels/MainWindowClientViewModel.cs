@@ -27,6 +27,7 @@ public class MainWindowClientViewModel : ViewModelBase, IDisposable
     private readonly IMainWindowModel _model;
     private readonly IScheduler _uiScheduler;
     private readonly NamedPipeSync.Common.Application.Imaging.IImageBase64Converter _imageConverter;
+    private readonly NamedPipeSync.Common.Application.Imaging.IImageProcessingService _imageProcessingService;
 
     private readonly CompositeDisposable _disposables = new();
     private string _title = "VM: Client Window";
@@ -79,12 +80,14 @@ public class MainWindowClientViewModel : ViewModelBase, IDisposable
         ILogger logger,
         IMainWindowModel model,
         IScheduler uiScheduler,
-        Common.Application.Imaging.IImageBase64Converter imageBase64Converter)
+        Common.Application.Imaging.IImageBase64Converter imageBase64Converter,
+        Common.Application.Imaging.IImageProcessingService imageProcessingService)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _model = model ?? throw new ArgumentNullException(nameof(model));
         _uiScheduler = uiScheduler ?? throw new ArgumentNullException(nameof(uiScheduler));
         _imageConverter = imageBase64Converter ?? throw new ArgumentNullException(nameof(imageBase64Converter));
+        _imageProcessingService = imageProcessingService ?? throw new ArgumentNullException(nameof(imageProcessingService));
 
         ExitCommand = new DelegateCommand(OnExit);
         ConnectCommand = new DelegateCommand(async () => await OnConnectAsync());
@@ -111,6 +114,7 @@ public class MainWindowClientViewModel : ViewModelBase, IDisposable
             new DesignTimePipeClient());
         _uiScheduler = CurrentThreadScheduler.Instance;
         _imageConverter = new NamedPipeSync.Common.Application.Imaging.ImageBase64Converter();
+        _imageProcessingService = new NamedPipeSync.Common.Application.Imaging.ImageProcessingService();
 
         ExitCommand = new DelegateCommand(() => { });
         ConnectCommand = new DelegateCommand(() => { });
@@ -212,12 +216,32 @@ public class MainWindowClientViewModel : ViewModelBase, IDisposable
                 {
                     try
                     {
-                        BackgroundImage = _imageConverter.Base64ToWriteableBitmap(cfg.ScreenshotBase64);
+                        // Process to resulting image (crop to full bounds, apply Sepia) and set as background
+                        var processedPngBytes = _imageProcessingService.ApplySepiaToneToCroppedBase64(
+                            cfg.ScreenshotBase64, 0, 0, int.MaxValue, int.MaxValue);
+                        var processedBase64 = Convert.ToBase64String(processedPngBytes);
+                        BackgroundImage = _imageConverter.Base64ToWriteableBitmap(processedBase64);
                         ClientText = $"Client {_model.GetClientId()} | Start CP: {cfg.StartingCheckpoint.Id} | {cfg.TimestampUtc:HH:mm:ss}";
 
                         // Position the window according to the starting checkpoint's location
                         WindowLeft = cfg.StartingCheckpoint.Location.X;
                         WindowTop = cfg.StartingCheckpoint.Location.Y;
+
+                        // Save the screenshot to disk asynchronously (do not block UI thread)
+                        var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+                        var dir = System.IO.Path.Combine(appData, "NamedPipeSync", "Client", "Images");
+                        var fname = $"cfg_{cfg.TimestampUtc:yyyyMMdd_HHmmss_fff}_client{_model.GetClientId()}.png";
+                        _ = Task.Run(async () =>
+                        {
+                            try
+                            {
+                                await _imageProcessingService.SaveBase64PngAsync(cfg.ScreenshotBase64, dir, fname);
+                            }
+                            catch (Exception ex)
+                            {
+                                _logger.Error(ex);
+                            }
+                        });
                     }
                     catch (Exception ex)
                     {

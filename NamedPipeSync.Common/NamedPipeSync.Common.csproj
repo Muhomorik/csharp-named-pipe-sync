@@ -15,5 +15,6 @@
     <PackageReference Include="NLog" Version="6.0.4" />
     <PackageReference Include="NLog.Extensions.Logging" Version="6.0.4" />
     <PackageReference Include="System.Reactive" Version="6.0.2" />
+    <PackageReference Include="Magick.NET-Q8-AnyCPU" Version="13.6.7" />
   </ItemGroup>
 </Project>
