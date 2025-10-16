@@ -15,6 +15,7 @@ using NLog;
 
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using ImageMagick;
 
 namespace NamedPipeSync.Client.ViewModels;
 
@@ -217,10 +218,13 @@ public class MainWindowClientViewModel : ViewModelBase, IDisposable
                     try
                     {
                         // Process to resulting image (crop to full bounds, apply Sepia) and set as background
-                        var processedPngBytes = _imageProcessingService.ApplySepiaToneToCroppedBase64(
-                            cfg.ScreenshotBase64, 0, 0, int.MaxValue, int.MaxValue);
-                        var processedBase64 = Convert.ToBase64String(processedPngBytes);
-                        BackgroundImage = _imageConverter.Base64ToWriteableBitmap(processedBase64);
+                        using (var src = new MagickImage(string.IsNullOrWhiteSpace(cfg.ScreenshotBase64) ? Array.Empty<byte>() : Convert.FromBase64String(cfg.ScreenshotBase64)))
+                        using (var processed = _imageProcessingService.ApplySepiaToneToCropped(src, 0, 0, int.MaxValue, int.MaxValue))
+                        {
+                            var processedBytes = processed.ToByteArray(MagickFormat.Png);
+                            var processedBase64 = Convert.ToBase64String(processedBytes);
+                            BackgroundImage = _imageConverter.Base64ToWriteableBitmap(processedBase64);
+                        }
                         ClientText = $"Client {_model.GetClientId()} | Start CP: {cfg.StartingCheckpoint.Id} | {cfg.TimestampUtc:HH:mm:ss}";
 
                         // Position the window according to the starting checkpoint's location

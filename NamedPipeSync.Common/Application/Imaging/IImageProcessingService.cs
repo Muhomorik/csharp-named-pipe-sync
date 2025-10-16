@@ -2,12 +2,13 @@
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using ImageMagick;
 
 namespace NamedPipeSync.Common.Application.Imaging;
 
 /// <summary>
 /// Image processing application service that encapsulates common image operations used by both Server and Client.
-/// The service hides concrete imaging library types from consumers (e.g., Magick.NET) and exposes simple byte/base64 APIs.
+/// NOTE: These APIs exchange MagickImage to avoid unnecessary byte[] conversions. Callers own the lifetime of returned images and must dispose them.
 /// </summary>
 public interface IImageProcessingService
 {
@@ -22,25 +23,25 @@ public interface IImageProcessingService
     Task<string> SaveBase64PngAsync(string? base64Png, string directory, string? fileName = null, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Crops the PNG supplied as Base64 at the specified rectangle and returns a PNG as raw bytes.
+    /// Crops the provided image at the specified rectangle and returns a new MagickImage.
     /// Coordinates are in pixels. Out-of-range values will be clamped to the image bounds.
     /// </summary>
-    /// <param name="base64Png">Source image (PNG) as Base64.</param>
+    /// <param name="source">Source image. Must not be null. The method does not mutate this instance.</param>
     /// <param name="x">Left X coordinate in pixels (0-based).</param>
     /// <param name="y">Top Y coordinate in pixels (0-based).</param>
     /// <param name="width">Width in pixels; must be > 0.</param>
     /// <param name="height">Height in pixels; must be > 0.</param>
-    /// <returns>PNG bytes for the cropped region.</returns>
-    byte[] CropPngFromBase64(string base64Png, int x, int y, int width, int height);
+    /// <returns>A new MagickImage representing the cropped region. Caller owns and must dispose.</returns>
+    MagickImage Crop(MagickImage source, int x, int y, int width, int height);
 
     /// <summary>
-    /// Crops the PNG supplied as Base64 then applies a SepiaTone effect to the cropped image and returns PNG bytes.
+    /// Crops the provided image and applies a SepiaTone effect to the cropped image.
     /// </summary>
-    /// <param name="base64Png">Source image (PNG) as Base64.</param>
+    /// <param name="source">Source image. Must not be null. The method does not mutate this instance.</param>
     /// <param name="x">Left X coordinate in pixels (0-based).</param>
     /// <param name="y">Top Y coordinate in pixels (0-based).</param>
     /// <param name="width">Width in pixels; must be > 0.</param>
     /// <param name="height">Height in pixels; must be > 0.</param>
-    /// <returns>PNG bytes of the cropped image with SepiaTone applied.</returns>
-    byte[] ApplySepiaToneToCroppedBase64(string base64Png, int x, int y, int width, int height);
+    /// <returns>A new MagickImage with SepiaTone applied. Caller owns and must dispose.</returns>
+    MagickImage ApplySepiaToneToCropped(MagickImage source, int x, int y, int width, int height);
 }

@@ -7,7 +7,7 @@ using ImageMagick;
 namespace NamedPipeSync.Common.Application.Imaging;
 
 /// <summary>
-/// Magick.NET-based image processing service. Keeps Magick types internal to the implementation.
+/// Magick.NET-based image processing service.
 /// </summary>
 public sealed class ImageProcessingService : IImageProcessingService
 {
@@ -34,38 +34,40 @@ public sealed class ImageProcessingService : IImageProcessingService
         return fullPath;
     }
 
-    public byte[] CropPngFromBase64(string base64Png, int x, int y, int width, int height)
+    public MagickImage Crop(MagickImage source, int x, int y, int width, int height)
     {
-        if (base64Png is null) throw new ArgumentNullException(nameof(base64Png));
+        if (source is null) throw new ArgumentNullException(nameof(source));
         if (width <= 0) throw new ArgumentOutOfRangeException(nameof(width));
         if (height <= 0) throw new ArgumentOutOfRangeException(nameof(height));
 
-        var bytes = Convert.FromBase64String(base64Png);
-        using var image = new MagickImage(bytes);
+        // Work on a clone to avoid mutating caller-owned image
+        var clone = (MagickImage)source.Clone();
 
         // Clamp rectangle within bounds
-        var rect = ClampRectangle(x, y, width, height, image.Width, image.Height);
-        image.Crop(rect);
-        image.RePage();
+        var rect = ClampRectangle(x, y, width, height, clone.Width, clone.Height);
+        clone.Crop(rect);
+        clone.RePage();
 
-        return image.ToByteArray(MagickFormat.Png);
+        return clone; // caller must Dispose
     }
 
-    public byte[] ApplySepiaToneToCroppedBase64(string base64Png, int x, int y, int width, int height)
+    public MagickImage ApplySepiaToneToCropped(MagickImage source, int x, int y, int width, int height)
     {
-        if (base64Png is null) throw new ArgumentNullException(nameof(base64Png));
+        if (source is null) throw new ArgumentNullException(nameof(source));
         if (width <= 0) throw new ArgumentOutOfRangeException(nameof(width));
         if (height <= 0) throw new ArgumentOutOfRangeException(nameof(height));
 
-        var bytes = Convert.FromBase64String(base64Png);
-        using var image = new MagickImage(bytes);
-
-        var rect = ClampRectangle(x, y, width, height, image.Width, image.Height);
-        image.Crop(rect);
-        image.RePage();
-
-        image.SepiaTone();
-        return image.ToByteArray(MagickFormat.Png);
+        var cropped = Crop(source, x, y, width, height);
+        try
+        {
+            cropped.SepiaTone();
+            return cropped; // caller must Dispose
+        }
+        catch
+        {
+            cropped.Dispose();
+            throw;
+        }
     }
 
     private static MagickGeometry ClampRectangle(int x, int y, int width, int height, int maxWidth, int maxHeight)
