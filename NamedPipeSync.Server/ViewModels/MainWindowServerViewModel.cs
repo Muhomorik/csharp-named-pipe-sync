@@ -334,14 +334,7 @@ public class MainWindowServerViewModel : ViewModelBase, IDisposable
     {
         try
         {
-            var window = System.Windows.Application.Current?.MainWindow;
-            if (window is null)
-            {
-                _logger.Warn("Cannot capture screen: MainWindow is null");
-                return;
-            }
-
-            await _model.CaptureScreenAndRestartClientsAsync(window);
+            await _model.CaptureScreenAndRestartClientsAsync();
         }
         catch (Exception ex)
         {

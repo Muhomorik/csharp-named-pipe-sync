@@ -17,14 +17,17 @@ namespace NamedPipeSync.Server.Services;
 public sealed class ScreenCaptureService : IScreenCaptureService
 {
     private readonly ILogger _logger;
+    private readonly IWindowProvider _windowProvider;
 
-    public ScreenCaptureService(ILogger logger)
+    public ScreenCaptureService(ILogger logger, IWindowProvider windowProvider)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _windowProvider = windowProvider ?? throw new ArgumentNullException(nameof(windowProvider));
     }
 
-    public async Task<byte[]> CaptureCurrentScreenPngAsync(Window window, CancellationToken cancellationToken = default)
+    public async Task<byte[]> CaptureCurrentScreenPngAsync(CancellationToken cancellationToken = default)
     {
+        var window = _windowProvider.MainWindow;
         if (window is null)
             return Array.Empty<byte>();
 

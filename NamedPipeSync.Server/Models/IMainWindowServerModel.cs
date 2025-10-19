@@ -153,8 +153,7 @@ public interface IMainWindowServerModel
     /// minimizes the window, captures the current screen as PNG bytes, restores the window, and then processes
     /// the screenshot and restarts the previously connected clients.
     /// </summary>
-    /// <param name="window">The WPF window to use for determining which monitor to capture.</param>
     /// <param name="ct">Cancellation token to cancel the operation cooperatively.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    Task CaptureScreenAndRestartClientsAsync(System.Windows.Window window, CancellationToken ct = default);
+    Task CaptureScreenAndRestartClientsAsync(CancellationToken ct = default);
 }

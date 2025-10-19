@@ -45,9 +45,18 @@ public partial class App : Application
         // Create application-wide lifetime scope
         _applicationScope = _container.BeginLifetimeScope();
 
+        // Create the main window
+        var mainWindow = new MainWindow();
 
-        // Create and show the main window
-        var mainWindow = _applicationScope.Resolve<MainWindow>();
+        // CRITICAL: Set the window reference in WindowProvider BEFORE resolving ViewModel
+        // The ViewModel resolution triggers service creation, which need the window reference
+        var windowProvider = _applicationScope.Resolve<IWindowProvider>();
+        if (windowProvider is WindowProvider provider)
+        {
+            provider.MainWindow = mainWindow;
+        }
+
+        // Now safe to resolve ViewModel (services will have window reference)
         var mainWindowViewModel = _applicationScope.Resolve<MainWindowServerViewModel>();
 
         mainWindow.DataContext = mainWindowViewModel;
@@ -117,6 +126,11 @@ public partial class App : Application
 
         builder.RegisterType<NamedPipeServer>()
             .As<INamedPipeServer>()
+            .SingleInstance();
+
+        // Window provider - singleton that will be set after window creation
+        builder.RegisterType<WindowProvider>()
+            .As<IWindowProvider>()
             .SingleInstance();
 
         // UI services

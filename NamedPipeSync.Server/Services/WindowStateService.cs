@@ -8,20 +8,23 @@ using NLog;
 namespace NamedPipeSync.Server.Services;
 
 /// <summary>
-/// WPF implementation of <see cref="IWindowStateService"/> that operates on <see cref="Application.Current"/>.MainWindow.
+/// WPF implementation of <see cref="IWindowStateService"/> that operates on the window provided by <see cref="IWindowProvider"/>.
 /// Ensures UI-thread marshalling via Dispatcher and avoids blocking the UI thread.
 /// </summary>
 public sealed class WindowStateService : IWindowStateService
 {
     private readonly ILogger _logger;
+    private readonly IWindowProvider _windowProvider;
 
-    public WindowStateService(ILogger logger)
+    public WindowStateService(ILogger logger, IWindowProvider windowProvider)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _windowProvider = windowProvider ?? throw new ArgumentNullException(nameof(windowProvider));
     }
 
-    public async Task MinimizeAsync(Window window, CancellationToken cancellationToken = default)
+    public async Task MinimizeAsync(CancellationToken cancellationToken = default)
     {
+        var window = _windowProvider.MainWindow;
         if (window is null)
             return;
 
@@ -38,8 +41,9 @@ public sealed class WindowStateService : IWindowStateService
         }, System.Windows.Threading.DispatcherPriority.Normal, cancellationToken);
     }
 
-    public async Task RestoreAsync(Window window, CancellationToken cancellationToken = default)
+    public async Task RestoreAsync(CancellationToken cancellationToken = default)
     {
+        var window = _windowProvider.MainWindow;
         if (window is null)
             return;
 

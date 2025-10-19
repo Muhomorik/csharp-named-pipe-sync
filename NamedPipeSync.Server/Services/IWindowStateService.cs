@@ -12,16 +12,14 @@ namespace NamedPipeSync.Server.Services;
 public interface IWindowStateService
 {
     /// <summary>
-    /// Minimizes the specified window.
+    /// Minimizes the current main window if available.
     /// </summary>
-    /// <param name="window">The WPF window to minimize.</param>
     /// <param name="cancellationToken">Cancellation token. If cancelled before the dispatcher operation runs, the task will complete in a cancelled state.</param>
-    Task MinimizeAsync(System.Windows.Window window, CancellationToken cancellationToken = default);
+    Task MinimizeAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Restores the specified window to normal state and brings it to foreground if possible.
+    /// Restores the current main window to normal state and brings it to foreground if possible.
     /// </summary>
-    /// <param name="window">The WPF window to restore.</param>
     /// <param name="cancellationToken">Cancellation token. If cancelled before the dispatcher operation runs, the task will complete in a cancelled state.</param>
-    Task RestoreAsync(System.Windows.Window window, CancellationToken cancellationToken = default);
+    Task RestoreAsync(CancellationToken cancellationToken = default);
 }
