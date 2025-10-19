@@ -30,8 +30,8 @@ public class MainWindowClientViewModel : ViewModelBase, IDisposable
     private readonly ILogger _logger;
     private readonly IMainWindowModel _model;
     private readonly IScheduler _uiScheduler;
-    private readonly NamedPipeSync.Common.Application.Imaging.IImageBase64Converter _imageConverter;
-    private readonly NamedPipeSync.Common.Application.Imaging.IImageProcessingService _imageProcessingService;
+    private readonly IImageBase64Converter _imageConverter;
+    private readonly IImageProcessingService _imageProcessingService;
 
     private readonly CompositeDisposable _disposables = new();
     private string _title = "VM: Client Window";
@@ -84,8 +84,8 @@ public class MainWindowClientViewModel : ViewModelBase, IDisposable
         ILogger logger,
         IMainWindowModel model,
         IScheduler uiScheduler,
-        Common.Application.Imaging.IImageBase64Converter imageBase64Converter,
-        Common.Application.Imaging.IImageProcessingService imageProcessingService)
+        IImageBase64Converter imageBase64Converter,
+        IImageProcessingService imageProcessingService)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _model = model ?? throw new ArgumentNullException(nameof(model));
@@ -118,8 +118,8 @@ public class MainWindowClientViewModel : ViewModelBase, IDisposable
             new DesignTimeApplicationLifetime(),
             new DesignTimePipeClient());
         _uiScheduler = CurrentThreadScheduler.Instance;
-        _imageConverter = new NamedPipeSync.Common.Application.Imaging.ImageBase64Converter();
-        _imageProcessingService = new NamedPipeSync.Common.Application.Imaging.ImageProcessingService();
+        _imageConverter = new ImageBase64Converter();
+        _imageProcessingService = new ImageProcessingService();
 
         ExitCommand = new DelegateCommand(() => { });
         ConnectCommand = new DelegateCommand(() => { });
