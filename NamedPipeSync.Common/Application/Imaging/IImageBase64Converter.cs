@@ -39,11 +39,23 @@ public interface IImageBase64Converter
 
     /// <summary>
     /// Applies the specified transformation to a Base64-encoded image and returns a frozen WriteableBitmap.
+    /// Optionally crops the image to the specified rectangle BEFORE applying the transformation.
     /// This composes image processing and conversion into a single convenience call without introducing DI coupling.
     /// </summary>
     /// <param name="processingService">Processing service used to apply the transformation. Must not be null.</param>
     /// <param name="base64Image">Base64 source image. If null/empty, a fallback bitmap is returned.</param>
     /// <param name="transformation">Transformation to apply.</param>
+    /// <param name="windowLeft">Left (X) of the crop rectangle in pixels. Values are clamped to image bounds.</param>
+    /// <param name="windowTop">Top (Y) of the crop rectangle in pixels. Values are clamped to image bounds.</param>
+    /// <param name="windowContentWidth">Width of the crop rectangle in pixels. Must be > 0; clamped to image bounds.</param>
+    /// <param name="windowContentHeight">Height of the crop rectangle in pixels. Must be > 0; clamped to image bounds.</param>
     /// <returns>A frozen WriteableBitmap ready for WPF binding.</returns>
-    WriteableBitmap TransformBase64ToWriteableBitmap(IImageProcessingService processingService, string? base64Image, ImageTransformation transformation);
+    WriteableBitmap TransformBase64ToWriteableBitmap(
+        IImageProcessingService processingService,
+        string? base64Image,
+        ImageTransformation transformation,
+        double windowLeft,
+        double windowTop,
+        double windowContentWidth,
+        double windowContentHeight);
 }

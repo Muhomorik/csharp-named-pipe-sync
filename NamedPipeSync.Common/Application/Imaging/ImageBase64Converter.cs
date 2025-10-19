@@ -102,7 +102,14 @@ public sealed class ImageBase64Converter : IImageBase64Converter
     /// <param name="transformation">Transformation to apply.</param>
     /// <returns>A frozen WriteableBitmap ready for WPF binding.</returns>
     /// <exception cref="ArgumentNullException">Thrown if processingService is null.</exception>
-    public WriteableBitmap TransformBase64ToWriteableBitmap(IImageProcessingService processingService, string? base64Image, ImageTransformation transformation)
+    public WriteableBitmap TransformBase64ToWriteableBitmap(
+        IImageProcessingService processingService,
+        string? base64Image,
+        ImageTransformation transformation,
+        double windowLeft,
+        double windowTop,
+        double windowContentWidth,
+        double windowContentHeight)
     {
         if (processingService is null) throw new ArgumentNullException(nameof(processingService));
 
@@ -111,8 +118,20 @@ public sealed class ImageBase64Converter : IImageBase64Converter
             return CreateSolidColorBitmap();
         }
 
-        using var processed = processingService.ApplyTransformationFromBase64(base64Image, transformation);
-        var processedBase64 = MagickImageToBase64Png(processed);
+        // Convert crop parameters to integers in pixels with safe clamping later in the processing service.
+        var x = (int)Math.Floor(Math.Max(0, windowLeft));
+        var y = (int)Math.Floor(Math.Max(0, windowTop));
+        var w = (int)Math.Ceiling(Math.Max(1, windowContentWidth));
+        var h = (int)Math.Ceiling(Math.Max(1, windowContentHeight));
+
+        // Decode Base64 to a MagickImage, crop to the specified rectangle, then apply the requested transformation.
+        // The issue requires cropping BEFORE applying SepiaTone.
+        using var src = new MagickImage(Convert.FromBase64String(base64Image));
+        using var croppedSepia = transformation == ImageTransformation.Sepia
+            ? processingService.ApplySepiaToneToCropped(src, x, y, w, h)
+            : processingService.Crop(src, x, y, w, h);
+
+        var processedBase64 = MagickImageToBase64Png(croppedSepia);
         var wb = Base64ToWriteableBitmap(processedBase64);
         return wb; // already frozen by Base64ToWriteableBitmap
     }

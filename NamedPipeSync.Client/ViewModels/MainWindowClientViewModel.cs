@@ -221,18 +221,22 @@ public class MainWindowClientViewModel : ViewModelBase, IDisposable
                 {
                     try
                     {
-                        // Process image from Base64 using requested transformation via processing service and converter; skip if missing
-                        BackgroundImage = _imageConverter.TransformBase64ToWriteableBitmap(
-                            _imageProcessingService,
-                            cfg.ScreenshotBase64,
-                            ImageTransformation.Sepia);
-
-                        ClientText =
-                            $"Client {_model.GetClientId()} | Start CP: {cfg.StartingCheckpoint.Id} | {cfg.TimestampUtc:HH:mm:ss}";
-
                         // Position the window according to the starting checkpoint's location
                         WindowLeft = cfg.StartingCheckpoint.Location.X;
                         WindowTop = cfg.StartingCheckpoint.Location.Y;
+
+                        // Process image from Base64 using requested transformation via processing service and converter; crop to window before applying Sepia
+                        BackgroundImage = _imageConverter.TransformBase64ToWriteableBitmap(
+                            _imageProcessingService,
+                            cfg.ScreenshotBase64,
+                            ImageTransformation.Sepia,
+                            WindowLeft,
+                            WindowTop,
+                            WindowContentWidth,
+                            WindowContentHeight);
+
+                        ClientText =
+                            $"Client {_model.GetClientId()} | Start CP: {cfg.StartingCheckpoint.Id} | {cfg.TimestampUtc:HH:mm:ss}";
 
                         // Save the screenshot to disk asynchronously (do not block UI thread)
                         var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
