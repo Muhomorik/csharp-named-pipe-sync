@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Windows.Media.Imaging;
+using ImageMagick;
 
 namespace NamedPipeSync.Common.Application.Imaging;
 
@@ -40,6 +41,19 @@ public sealed class ImageBase64Converter : IImageBase64Converter
     }
 
     /// <summary>
+    /// Encodes an ImageMagick <see cref="MagickImage"/> into PNG format and returns a Base64 string.
+    /// </summary>
+    /// <param name="image">The source Magick image to encode. Must not be null.</param>
+    /// <returns>A Base64 string representing the PNG-encoded image.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="image"/> is null.</exception>
+    public string MagickImageToBase64Png(MagickImage image)
+    {
+        if (image is null) throw new ArgumentNullException(nameof(image));
+        var pngBytes = image.ToByteArray(MagickFormat.Png);
+        return Convert.ToBase64String(pngBytes);
+    }
+
+    /// <summary>
     /// Decodes a Base64 string (PNG-encoded image) to a frozen <see cref="WriteableBitmap"/> ready for WPF rendering.
     /// </summary>
     /// <param name="base64">Base64 string containing a PNG image. Must not be null or empty.</param>
@@ -70,5 +84,34 @@ public sealed class ImageBase64Converter : IImageBase64Converter
         var resultWb = new WriteableBitmap(bmp);
         resultWb.Freeze();
         return resultWb;
+    }
+
+    /// <summary>
+    /// Applies an image <see cref="ImageTransformation"/> to the provided Base64-encoded image and returns a frozen <see cref="WriteableBitmap"/> suitable for WPF binding.
+    /// </summary>
+    /// <param name="base64Image">Base64 string representing the source image. May be null/empty; in that case a 1x1 transparent bitmap is returned.</param>
+    /// <param name="transformation">Transformation to apply. See <see cref="ImageTransformation"/>.</param>
+    /// <returns>
+    /// A frozen <see cref="WriteableBitmap"/> with the transformation applied. Never null.
+    /// The returned bitmap is already Frozen and does not need to be disposed or wrapped in a using statement.
+    /// All temporary native resources (e.g., MagickImage) are disposed within this method.
+    /// </returns>
+    public WriteableBitmap GetProcessedImage(string? base64Image, ImageTransformation transformation)
+    {
+        // Empty input: return the standard 1x1 transparent bitmap
+        if (string.IsNullOrWhiteSpace(base64Image))
+        {
+            var emptyWb = new WriteableBitmap(1, 1, 96, 96, System.Windows.Media.PixelFormats.Pbgra32, null);
+            emptyWb.Freeze();
+            return emptyWb;
+        }
+
+        // Use the existing processing service to apply transformation
+        var processing = new ImageProcessingService();
+        using var processed = processing.ApplyTransformationFromBase64(base64Image, transformation);
+        var processedBase64 = MagickImageToBase64Png(processed);
+        var wb = Base64ToWriteableBitmap(processedBase64);
+        wb.Freeze();
+        return wb;
     }
 }

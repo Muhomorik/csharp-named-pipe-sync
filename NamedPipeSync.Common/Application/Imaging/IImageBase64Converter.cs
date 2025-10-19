@@ -1,4 +1,5 @@
 ﻿using System.Windows.Media.Imaging;
+using ImageMagick;
 
 namespace NamedPipeSync.Common.Application.Imaging;
 
@@ -23,9 +24,29 @@ public interface IImageBase64Converter
     string PngBytesToBase64(byte[] pngBytes);
 
     /// <summary>
+    /// Encodes an ImageMagick <see cref="MagickImage"/> into PNG format and returns a Base64 string.
+    /// </summary>
+    /// <param name="image">The source Magick image to encode. Must not be null.</param>
+    /// <returns>A Base64 string representing the PNG-encoded image.</returns>
+    string MagickImageToBase64Png(MagickImage image);
+
+    /// <summary>
     /// Decodes a Base64 string (PNG-encoded image) to a frozen <see cref="WriteableBitmap"/> ready for WPF rendering.
     /// </summary>
     /// <param name="base64">Base64 string containing a PNG image. May be empty; empty produces a 1x1 transparent bitmap.</param>
     /// <returns>A frozen <see cref="WriteableBitmap"/>.</returns>
     WriteableBitmap Base64ToWriteableBitmap(string base64);
+
+    /// <summary>
+    /// Applies an image <see cref="ImageTransformation"/> to the provided Base64-encoded image and returns a frozen <see cref="WriteableBitmap"/> suitable for WPF binding.
+    /// This convenience method encapsulates decoding, processing, and re-encoding steps into a single call for Presentation layer usage.
+    /// </summary>
+    /// <param name="base64Image">Base64 string representing the source image. May be null/empty; in that case a 1x1 transparent bitmap is returned.</param>
+    /// <param name="transformation">Transformation to apply. See <see cref="ImageTransformation"/>.</param>
+    /// <returns>
+    /// A frozen <see cref="WriteableBitmap"/> with the transformation applied. Never null.
+    /// The returned bitmap is already Frozen and does not need to be disposed or wrapped in a using statement.
+    /// All temporary native resources (e.g., <see cref="ImageMagick.MagickImage"/>) are disposed within this method.
+    /// </returns>
+    WriteableBitmap GetProcessedImage(string? base64Image, ImageTransformation transformation);
 }

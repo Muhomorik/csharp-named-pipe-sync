@@ -34,6 +34,43 @@ public sealed class ImageProcessingService : IImageProcessingService
         return fullPath;
     }
 
+    public MagickImage ApplyTransformationFromBase64(string? base64Image, ImageTransformation transformation)
+    {
+        var bytes = string.IsNullOrWhiteSpace(base64Image)
+            ? Array.Empty<byte>()
+            : Convert.FromBase64String(base64Image);
+
+        // Create source image from bytes; this instance will be disposed if we clone
+        var src = new MagickImage(bytes);
+        try
+        {
+            switch (transformation)
+            {
+                case ImageTransformation.Sepia:
+                    // Work on a clone to avoid mutating the original in case callers expect src intact later.
+                    var clone = (MagickImage)src.Clone();
+                    try
+                    {
+                        clone.SepiaTone();
+                        return clone; // caller must Dispose
+                    }
+                    catch
+                    {
+                        clone.Dispose();
+                        throw;
+                    }
+                default:
+                    // If an unknown transformation is provided, just return a clone without changes.
+                    return (MagickImage)src.Clone();
+            }
+        }
+        finally
+        {
+            // Always dispose the temporary source image
+            src.Dispose();
+        }
+    }
+
     public MagickImage Crop(MagickImage source, int x, int y, int width, int height)
     {
         if (source is null) throw new ArgumentNullException(nameof(source));

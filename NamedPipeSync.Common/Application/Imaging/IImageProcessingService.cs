@@ -23,6 +23,15 @@ public interface IImageProcessingService
     Task<string> SaveBase64PngAsync(string? base64Png, string directory, string? fileName = null, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Applies a transformation to an image provided as a Base64-encoded string and returns a new MagickImage.
+    /// The caller owns and must dispose the returned image.
+    /// </summary>
+    /// <param name="base64Image">Base64 string representing the source image. If null/empty, an empty image will be used.</param>
+    /// <param name="transformation">Transformation to apply. See <see cref="ImageTransformation"/>.</param>
+    /// <returns>A new MagickImage with the transformation applied.</returns>
+    MagickImage ApplyTransformationFromBase64(string? base64Image, ImageTransformation transformation);
+
+    /// <summary>
     /// Crops the provided image at the specified rectangle and returns a new MagickImage.
     /// Coordinates are in pixels. Out-of-range values will be clamped to the image bounds.
     /// </summary>
