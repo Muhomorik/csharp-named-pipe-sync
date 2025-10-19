@@ -42,7 +42,7 @@ public interface IImageBase64Converter
     /// This composes image processing and conversion into a single convenience call without introducing DI coupling.
     /// </summary>
     /// <param name="processingService">Processing service used to apply the transformation. Must not be null.</param>
-    /// <param name="base64Image">Base64 source image. If null/empty, a 1x1 transparent bitmap is returned.</param>
+    /// <param name="base64Image">Base64 source image. If null/empty, a fallback bitmap is returned.</param>
     /// <param name="transformation">Transformation to apply.</param>
     /// <returns>A frozen WriteableBitmap ready for WPF binding.</returns>
     WriteableBitmap TransformBase64ToWriteableBitmap(IImageProcessingService processingService, string? base64Image, ImageTransformation transformation);

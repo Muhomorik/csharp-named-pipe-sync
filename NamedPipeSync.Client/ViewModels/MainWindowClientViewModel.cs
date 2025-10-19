@@ -15,7 +15,10 @@ using NLog;
 
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+
 using ImageMagick;
+
+using NamedPipeSync.Common.Application.Imaging;
 
 namespace NamedPipeSync.Client.ViewModels;
 
@@ -88,7 +91,8 @@ public class MainWindowClientViewModel : ViewModelBase, IDisposable
         _model = model ?? throw new ArgumentNullException(nameof(model));
         _uiScheduler = uiScheduler ?? throw new ArgumentNullException(nameof(uiScheduler));
         _imageConverter = imageBase64Converter ?? throw new ArgumentNullException(nameof(imageBase64Converter));
-        _imageProcessingService = imageProcessingService ?? throw new ArgumentNullException(nameof(imageProcessingService));
+        _imageProcessingService =
+            imageProcessingService ?? throw new ArgumentNullException(nameof(imageProcessingService));
 
         ExitCommand = new DelegateCommand(OnExit);
         ConnectCommand = new DelegateCommand(async () => await OnConnectAsync());
@@ -218,15 +222,13 @@ public class MainWindowClientViewModel : ViewModelBase, IDisposable
                     try
                     {
                         // Process image from Base64 using requested transformation via processing service and converter; skip if missing
-                        if (!string.IsNullOrWhiteSpace(cfg.ScreenshotBase64))
-                        {
-                            BackgroundImage = _imageConverter.TransformBase64ToWriteableBitmap(
-                                _imageProcessingService,
-                                cfg.ScreenshotBase64,
-                                NamedPipeSync.Common.Application.Imaging.ImageTransformation.Sepia);
-                        }
-                        
-                        ClientText = $"Client {_model.GetClientId()} | Start CP: {cfg.StartingCheckpoint.Id} | {cfg.TimestampUtc:HH:mm:ss}";
+                        BackgroundImage = _imageConverter.TransformBase64ToWriteableBitmap(
+                            _imageProcessingService,
+                            cfg.ScreenshotBase64,
+                            ImageTransformation.Sepia);
+
+                        ClientText =
+                            $"Client {_model.GetClientId()} | Start CP: {cfg.StartingCheckpoint.Id} | {cfg.TimestampUtc:HH:mm:ss}";
 
                         // Position the window according to the starting checkpoint's location
                         WindowLeft = cfg.StartingCheckpoint.Location.X;
