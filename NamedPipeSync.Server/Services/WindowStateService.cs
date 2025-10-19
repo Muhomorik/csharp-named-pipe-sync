@@ -20,9 +20,8 @@ public sealed class WindowStateService : IWindowStateService
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    public async Task MinimizeAsync(CancellationToken cancellationToken = default)
+    public async Task MinimizeAsync(Window window, CancellationToken cancellationToken = default)
     {
-        var window = Application.Current?.MainWindow;
         if (window is null)
             return;
 
@@ -39,9 +38,8 @@ public sealed class WindowStateService : IWindowStateService
         }, System.Windows.Threading.DispatcherPriority.Normal, cancellationToken);
     }
 
-    public async Task RestoreAsync(CancellationToken cancellationToken = default)
+    public async Task RestoreAsync(Window window, CancellationToken cancellationToken = default)
     {
-        var window = Application.Current?.MainWindow;
         if (window is null)
             return;
 

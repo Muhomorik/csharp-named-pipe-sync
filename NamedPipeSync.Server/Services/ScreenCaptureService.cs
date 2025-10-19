@@ -23,9 +23,8 @@ public sealed class ScreenCaptureService : IScreenCaptureService
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    public async Task<byte[]> CaptureCurrentScreenPngAsync(CancellationToken cancellationToken = default)
+    public async Task<byte[]> CaptureCurrentScreenPngAsync(Window window, CancellationToken cancellationToken = default)
     {
-        var window = System.Windows.Application.Current?.MainWindow;
         if (window is null)
             return Array.Empty<byte>();
 

@@ -11,7 +11,8 @@ public interface IScreenCaptureService
     /// <summary>
     /// Captures the entire screen (monitor) on which the application's main window is located as a PNG image.
     /// </summary>
+    /// <param name="window">The WPF window used to determine which monitor to capture.</param>
     /// <param name="cancellationToken">Optional cancellation token for the capture operation.</param>
     /// <returns>PNG-encoded image bytes of the monitor.</returns>
-    Task<byte[]> CaptureCurrentScreenPngAsync(CancellationToken cancellationToken = default);
+    Task<byte[]> CaptureCurrentScreenPngAsync(System.Windows.Window window, CancellationToken cancellationToken = default);
 }

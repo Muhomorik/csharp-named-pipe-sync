@@ -164,7 +164,7 @@ public sealed class MainWindowServerModel : IMainWindowServerModel, IServerConfi
         return _server.ConnectedClientIds;
     }
 
-    public async Task CaptureScreenAndRestartClientsAsync(CancellationToken ct = default)
+    public async Task CaptureScreenAndRestartClientsAsync(System.Windows.Window window, CancellationToken ct = default)
     {
         try
         {
@@ -175,12 +175,12 @@ public sealed class MainWindowServerModel : IMainWindowServerModel, IServerConfi
             await CloseAllClientsAsync(ct).ConfigureAwait(false);
 
             // Minimize window to avoid capturing app UI, then capture the screen.
-            await _windowStateService.MinimizeAsync().ConfigureAwait(false);
-            var pngBytes = await _screenCaptureService.CaptureCurrentScreenPngAsync().ConfigureAwait(false);
+            await _windowStateService.MinimizeAsync(window).ConfigureAwait(false);
+            var pngBytes = await _screenCaptureService.CaptureCurrentScreenPngAsync(window).ConfigureAwait(false);
             _logger.Trace("Screenshot captured, size={0} bytes", pngBytes?.Length ?? 0);
 
             // Restore window after capture.
-            await _windowStateService.RestoreAsync().ConfigureAwait(false);
+            await _windowStateService.RestoreAsync(window).ConfigureAwait(false);
 
             // Delegate processing and restart.
             await ProcessScreenshotAndRestartAsync(pngBytes, connectedIds, ct).ConfigureAwait(false);
