@@ -87,45 +87,29 @@ public sealed class ImageBase64Converter : IImageBase64Converter
     }
 
     /// <summary>
-    /// Applies an image <see cref="ImageTransformation"/> to the provided Base64-encoded image and returns a frozen <see cref="WriteableBitmap"/> suitable for WPF binding.
+    /// Applies the specified transformation to a Base64-encoded image and returns a frozen WriteableBitmap.
+    /// This composes image processing and conversion into a single convenience call without introducing DI coupling.
     /// </summary>
-    /// <param name="base64Image">Base64 string representing the source image. May be null/empty; in that case a 288x288 solid dark bitmap (BGRA 37,37,37,255) is returned.</param>
-    /// <param name="transformation">Transformation to apply. See <see cref="ImageTransformation"/>.</param>
-    /// <returns>
-    /// A frozen <see cref="WriteableBitmap"/> with the transformation applied. Never null.
-    /// The returned bitmap is already Frozen and does not need to be disposed or wrapped in a using statement.
-    /// All temporary native resources (e.g., MagickImage) are disposed within this method.
-    /// </returns>
-    public WriteableBitmap GetProcessedImage(string? base64Image, ImageTransformation transformation)
+    /// <param name="processingService">Processing service used to apply the transformation. Must not be null.</param>
+    /// <param name="base64Image">Base64 source image. If null/empty, a 1x1 transparent bitmap is returned.</param>
+    /// <param name="transformation">Transformation to apply.</param>
+    /// <returns>A frozen WriteableBitmap ready for WPF binding.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if processingService is null.</exception>
+    public WriteableBitmap TransformBase64ToWriteableBitmap(IImageProcessingService processingService, string? base64Image, ImageTransformation transformation)
     {
-        // Empty input: return a 288x288 solid dark bitmap (BGRA 37,37,37,255)
+        if (processingService is null) throw new ArgumentNullException(nameof(processingService));
+
         if (string.IsNullOrWhiteSpace(base64Image))
         {
-            const int width = 288;
-            const int height = 288;
-            var fallbackWb = new WriteableBitmap(width, height, 96, 96, System.Windows.Media.PixelFormats.Pbgra32, null);
-
-            // Create pixel buffer for solid color (BGRA)
-            var pixels = new byte[width * height * 4];
-            for (var i = 0; i < width * height; i++)
-            {
-                pixels[i * 4 + 0] = 37;  // B
-                pixels[i * 4 + 1] = 37;  // G
-                pixels[i * 4 + 2] = 37;  // R
-                pixels[i * 4 + 3] = 255; // A
-            }
-
-            fallbackWb.WritePixels(new System.Windows.Int32Rect(0, 0, width, height), pixels, 4 * width, 0);
-            fallbackWb.Freeze();
-            return fallbackWb;
+            var empty = new WriteableBitmap(1, 1, 96, 96, System.Windows.Media.PixelFormats.Pbgra32, null);
+            empty.Freeze();
+            return empty;
         }
 
-        // Use the existing processing service to apply transformation
-        var processing = new ImageProcessingService();
-        using var processed = processing.ApplyTransformationFromBase64(base64Image, transformation);
+        using var processed = processingService.ApplyTransformationFromBase64(base64Image, transformation);
         var processedBase64 = MagickImageToBase64Png(processed);
         var wb = Base64ToWriteableBitmap(processedBase64);
-        wb.Freeze();
-        return wb;
+        return wb; // already frozen by Base64ToWriteableBitmap
     }
+
 }

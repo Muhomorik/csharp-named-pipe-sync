@@ -217,10 +217,14 @@ public class MainWindowClientViewModel : ViewModelBase, IDisposable
                 {
                     try
                     {
-                        // Process image from Base64 using requested transformation and set as background (single call via converter)
-                        BackgroundImage = _imageConverter.GetProcessedImage(
-                            cfg.ScreenshotBase64,
-                            NamedPipeSync.Common.Application.Imaging.ImageTransformation.Sepia);
+                        // Process image from Base64 using requested transformation via processing service and converter; skip if missing
+                        if (!string.IsNullOrWhiteSpace(cfg.ScreenshotBase64))
+                        {
+                            BackgroundImage = _imageConverter.TransformBase64ToWriteableBitmap(
+                                _imageProcessingService,
+                                cfg.ScreenshotBase64,
+                                NamedPipeSync.Common.Application.Imaging.ImageTransformation.Sepia);
+                        }
                         
                         ClientText = $"Client {_model.GetClientId()} | Start CP: {cfg.StartingCheckpoint.Id} | {cfg.TimestampUtc:HH:mm:ss}";
 

@@ -38,15 +38,12 @@ public interface IImageBase64Converter
     WriteableBitmap Base64ToWriteableBitmap(string base64);
 
     /// <summary>
-    /// Applies an image <see cref="ImageTransformation"/> to the provided Base64-encoded image and returns a frozen <see cref="WriteableBitmap"/> suitable for WPF binding.
-    /// This convenience method encapsulates decoding, processing, and re-encoding steps into a single call for Presentation layer usage.
+    /// Applies the specified transformation to a Base64-encoded image and returns a frozen WriteableBitmap.
+    /// This composes image processing and conversion into a single convenience call without introducing DI coupling.
     /// </summary>
-    /// <param name="base64Image">Base64 string representing the source image. May be null/empty; in that case a 288x288 solid dark bitmap (BGRA 37,37,37,255) is returned.</param>
-    /// <param name="transformation">Transformation to apply. See <see cref="ImageTransformation"/>.</param>
-    /// <returns>
-    /// A frozen <see cref="WriteableBitmap"/> with the transformation applied. Never null.
-    /// The returned bitmap is already Frozen and does not need to be disposed or wrapped in a using statement.
-    /// All temporary native resources (e.g., <see cref="ImageMagick.MagickImage"/>) are disposed within this method.
-    /// </returns>
-    WriteableBitmap GetProcessedImage(string? base64Image, ImageTransformation transformation);
+    /// <param name="processingService">Processing service used to apply the transformation. Must not be null.</param>
+    /// <param name="base64Image">Base64 source image. If null/empty, a 1x1 transparent bitmap is returned.</param>
+    /// <param name="transformation">Transformation to apply.</param>
+    /// <returns>A frozen WriteableBitmap ready for WPF binding.</returns>
+    WriteableBitmap TransformBase64ToWriteableBitmap(IImageProcessingService processingService, string? base64Image, ImageTransformation transformation);
 }
