@@ -221,6 +221,7 @@ public class MainWindowClientViewModel : ViewModelBase, IDisposable
                         BackgroundImage = _imageConverter.GetProcessedImage(
                             cfg.ScreenshotBase64,
                             NamedPipeSync.Common.Application.Imaging.ImageTransformation.Sepia);
+                        
                         ClientText = $"Client {_model.GetClientId()} | Start CP: {cfg.StartingCheckpoint.Id} | {cfg.TimestampUtc:HH:mm:ss}";
 
                         // Position the window according to the starting checkpoint's location

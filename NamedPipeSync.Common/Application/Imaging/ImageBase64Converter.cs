@@ -89,7 +89,7 @@ public sealed class ImageBase64Converter : IImageBase64Converter
     /// <summary>
     /// Applies an image <see cref="ImageTransformation"/> to the provided Base64-encoded image and returns a frozen <see cref="WriteableBitmap"/> suitable for WPF binding.
     /// </summary>
-    /// <param name="base64Image">Base64 string representing the source image. May be null/empty; in that case a 1x1 transparent bitmap is returned.</param>
+    /// <param name="base64Image">Base64 string representing the source image. May be null/empty; in that case a 288x288 solid dark bitmap (BGRA 37,37,37,255) is returned.</param>
     /// <param name="transformation">Transformation to apply. See <see cref="ImageTransformation"/>.</param>
     /// <returns>
     /// A frozen <see cref="WriteableBitmap"/> with the transformation applied. Never null.
@@ -98,12 +98,26 @@ public sealed class ImageBase64Converter : IImageBase64Converter
     /// </returns>
     public WriteableBitmap GetProcessedImage(string? base64Image, ImageTransformation transformation)
     {
-        // Empty input: return the standard 1x1 transparent bitmap
+        // Empty input: return a 288x288 solid dark bitmap (BGRA 37,37,37,255)
         if (string.IsNullOrWhiteSpace(base64Image))
         {
-            var emptyWb = new WriteableBitmap(1, 1, 96, 96, System.Windows.Media.PixelFormats.Pbgra32, null);
-            emptyWb.Freeze();
-            return emptyWb;
+            const int width = 288;
+            const int height = 288;
+            var fallbackWb = new WriteableBitmap(width, height, 96, 96, System.Windows.Media.PixelFormats.Pbgra32, null);
+
+            // Create pixel buffer for solid color (BGRA)
+            var pixels = new byte[width * height * 4];
+            for (var i = 0; i < width * height; i++)
+            {
+                pixels[i * 4 + 0] = 37;  // B
+                pixels[i * 4 + 1] = 37;  // G
+                pixels[i * 4 + 2] = 37;  // R
+                pixels[i * 4 + 3] = 255; // A
+            }
+
+            fallbackWb.WritePixels(new System.Windows.Int32Rect(0, 0, width, height), pixels, 4 * width, 0);
+            fallbackWb.Freeze();
+            return fallbackWb;
         }
 
         // Use the existing processing service to apply transformation

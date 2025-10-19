@@ -41,7 +41,7 @@ public interface IImageBase64Converter
     /// Applies an image <see cref="ImageTransformation"/> to the provided Base64-encoded image and returns a frozen <see cref="WriteableBitmap"/> suitable for WPF binding.
     /// This convenience method encapsulates decoding, processing, and re-encoding steps into a single call for Presentation layer usage.
     /// </summary>
-    /// <param name="base64Image">Base64 string representing the source image. May be null/empty; in that case a 1x1 transparent bitmap is returned.</param>
+    /// <param name="base64Image">Base64 string representing the source image. May be null/empty; in that case a 288x288 solid dark bitmap (BGRA 37,37,37,255) is returned.</param>
     /// <param name="transformation">Transformation to apply. See <see cref="ImageTransformation"/>.</param>
     /// <returns>
     /// A frozen <see cref="WriteableBitmap"/> with the transformation applied. Never null.
