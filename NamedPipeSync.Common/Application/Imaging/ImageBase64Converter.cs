@@ -1,5 +1,7 @@
 ﻿using System;
 using System.IO;
+using System.Windows;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using ImageMagick;
 
@@ -11,6 +13,13 @@ namespace NamedPipeSync.Common.Application.Imaging;
 /// </summary>
 public sealed class ImageBase64Converter : IImageBase64Converter
 {
+    private const int FallbackWidth = 288;
+    private const int FallbackHeight = 288;
+    private const byte FallbackR = 37;
+    private const byte FallbackG = 37;
+    private const byte FallbackB = 37;
+    private const byte FallbackA = 255;
+
     /// <summary>
     /// Encodes a WPF <see cref="BitmapSource"/> into PNG format and returns a Base64 string.
     /// </summary>
@@ -65,10 +74,8 @@ public sealed class ImageBase64Converter : IImageBase64Converter
         if (base64 is null) throw new ArgumentNullException(nameof(base64));
         if (string.IsNullOrWhiteSpace(base64))
         {
-            // Create a 1x1 transparent bitmap as a safe fallback for null/empty/whitespace input
-            var emptyWb = new WriteableBitmap(1, 1, 96, 96, System.Windows.Media.PixelFormats.Pbgra32, null);
-            emptyWb.Freeze();
-            return emptyWb;
+            // Return a 288x288 solid-color fallback bitmap using helper.
+            return CreateSolidColorBitmap();
         }
 
         var bytes = Convert.FromBase64String(base64);
@@ -91,7 +98,7 @@ public sealed class ImageBase64Converter : IImageBase64Converter
     /// This composes image processing and conversion into a single convenience call without introducing DI coupling.
     /// </summary>
     /// <param name="processingService">Processing service used to apply the transformation. Must not be null.</param>
-    /// <param name="base64Image">Base64 source image. If null/empty, a 1x1 transparent bitmap is returned.</param>
+    /// <param name="base64Image">Base64 source image. If null/empty, a 288x288 solid-color bitmap is returned.</param>
     /// <param name="transformation">Transformation to apply.</param>
     /// <returns>A frozen WriteableBitmap ready for WPF binding.</returns>
     /// <exception cref="ArgumentNullException">Thrown if processingService is null.</exception>
@@ -101,9 +108,7 @@ public sealed class ImageBase64Converter : IImageBase64Converter
 
         if (string.IsNullOrWhiteSpace(base64Image))
         {
-            var empty = new WriteableBitmap(1, 1, 96, 96, System.Windows.Media.PixelFormats.Pbgra32, null);
-            empty.Freeze();
-            return empty;
+            return CreateSolidColorBitmap();
         }
 
         using var processed = processingService.ApplyTransformationFromBase64(base64Image, transformation);
@@ -112,4 +117,34 @@ public sealed class ImageBase64Converter : IImageBase64Converter
         return wb; // already frozen by Base64ToWriteableBitmap
     }
 
+    /// <summary>
+    /// Creates and returns the 288x288 solid-color fallback bitmap.
+    /// This method should always be used when the input <c>base64Image</c> is null, empty, or consists only of whitespace.
+    /// </summary>
+    /// <remarks>
+    /// Use this to ensure a consistent fallback image for empty or invalid Base64 input.
+    /// </remarks>
+    private static WriteableBitmap CreateSolidColorBitmap()
+    {
+        var width = FallbackWidth;
+        var height = FallbackHeight;
+        var r = FallbackR;
+        var g = FallbackG;
+        var b = FallbackB;
+        var a = FallbackA;
+
+        var pixels = new byte[width * height * 4];
+        for (var i = 0; i < width * height; i++)
+        {
+            pixels[i * 4 + 0] = b; // Blue
+            pixels[i * 4 + 1] = g; // Green
+            pixels[i * 4 + 2] = r; // Red
+            pixels[i * 4 + 3] = a; // Alpha
+        }
+
+        var wb = new WriteableBitmap(width, height, 96, 96, PixelFormats.Pbgra32, null);
+        wb.WritePixels(new Int32Rect(0, 0, width, height), pixels, width * 4, 0);
+        wb.Freeze();
+        return wb;
+    }
 }
