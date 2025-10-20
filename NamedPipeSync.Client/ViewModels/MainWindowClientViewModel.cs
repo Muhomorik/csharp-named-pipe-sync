@@ -200,6 +200,14 @@ public class MainWindowClientViewModel : ViewModelBase, IDisposable
         set => SetProperty(ref _clientText, value, nameof(ClientText));
     }
 
+    private ShowMode _showMode = ShowMode.Debugging;
+
+    public ShowMode ShowMode
+    {
+        get => _showMode;
+        set => SetProperty(ref _showMode, value, nameof(ShowMode));
+    }
+
     public void Dispose() => _disposables.Dispose();
 
     private void WireUpObservables()
@@ -213,7 +221,7 @@ public class MainWindowClientViewModel : ViewModelBase, IDisposable
             .ObserveOn(_uiScheduler)
             .Subscribe(c => Title = $"Client {_model.GetClientId()}: ({c.X:0.###}, {c.Y:0.###})"));
 
-        // Handle server-sent configuration: update background image and caption
+        // Handle server-sent configuration: update background image, caption and show mode
         _disposables.Add(
             _model.ConfigurationReceived
                 .ObserveOn(_uiScheduler)
@@ -221,6 +229,9 @@ public class MainWindowClientViewModel : ViewModelBase, IDisposable
                 {
                     try
                     {
+                        // Update ShowMode from server configuration
+                        ShowMode = cfg.ShowMode;
+
                         // Position the window according to the starting checkpoint's location
                         WindowLeft = cfg.StartingCheckpoint.Location.X;
                         WindowTop = cfg.StartingCheckpoint.Location.Y;
