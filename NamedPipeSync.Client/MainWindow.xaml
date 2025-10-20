@@ -6,6 +6,7 @@
                  xmlns:viewModels="clr-namespace:NamedPipeSync.Client.ViewModels"
                  xmlns:mah="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro"
                  xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
+                 xmlns:common="clr-namespace:NamedPipeSync.Common.Application;assembly=NamedPipeSync.Common"
                  mc:Ignorable="d"
                  d:DataContext="{d:DesignInstance Type=viewModels:MainWindowClientViewModel, IsDesignTimeCreatable=True}"
                  Title="{Binding Title}"
@@ -21,7 +22,7 @@
     <mah:MetroWindow.Style>
         <Style TargetType="mah:MetroWindow">
             <!-- default: do not use the 'none' MetroWindow style (show chrome) -->
-            <Setter Property="mah:MetroWindow.UseNoneWindowStyle" Value="False"/>
+            <Setter Property="UseNoneWindowStyle" Value="False"/>
             <Style.Triggers>
                 <!-- when BorderIsVisible == false remove the caption and border -->
                 <DataTrigger Binding="{Binding BorderIsVisible}" Value="False">
@@ -47,47 +48,116 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <!-- Show the current ShowMode in a row above the main centered content -->
-        <TextBlock Grid.Row="1"
-                   Text="{Binding ShowMode}"
-                   Foreground="LightBlue"
-                   FontSize="18"
-                   HorizontalAlignment="Center"
-                   Margin="0,8,0,0"
-                   TextAlignment="Center" />
+        <!-- Content area whose full visual structure changes per ShowMode -->
+        <Grid.Resources>
+            <!-- Debugging layout: copies the current default StackPanel so it can be customized later -->
+            <DataTemplate x:Key="DebuggingTemplate">
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <TextBlock
+                        Text="{Binding ClientText}"
+                        Foreground="Orange"
+                        FontSize="32"
+                        FontWeight="Bold"
+                        HorizontalAlignment="Center"
+                        TextAlignment="Center" />
+                    <TextBlock
+                        Margin="0,12,0,0"
+                        HorizontalAlignment="Center"
+                        FontSize="18"
+                        TextAlignment="Center"
+                        Text="2025-09-25" />
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,16,0,0">
+                        <Button
+                            Margin="0,0,8,0"
+                            Padding="16,8"
+                            Content="Connect"
+                            Command="{Binding ConnectCommand}" />
+                        <Button
+                            Margin="0,0,8,0"
+                            Padding="16,8"
+                            Content="Disconnect"
+                            Command="{Binding DisconnectCommand}" />
+                        <Button
+                            Padding="16,8"
+                            Content="Exit"
+                            Command="{Binding ExitCommand}" />
+                    </StackPanel>
+                </StackPanel>
+            </DataTemplate>
 
-        <StackPanel Grid.Row="2"
-                    HorizontalAlignment="Center"
-                    VerticalAlignment="Center">
-            <TextBlock x:Name="ClientText"
-                       Text="{Binding ClientText}"
-                       Foreground="Orange"
-                       FontSize="32"
-                       FontWeight="Bold"
-                       HorizontalAlignment="Center"
-                       TextAlignment="Center" />
-            <TextBlock x:Name="DateTimeText"
-                       Margin="0,12,0,0"
-                       HorizontalAlignment="Center"
-                       FontSize="18"
-                       TextAlignment="Center"
-                       Text="2025-09-25" />
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,16,0,0">
-                <Button x:Name="ConnectButton"
-                        Margin="0,0,8,0"
-                        Padding="16,8"
-                        Content="Connect"
-                        Command="{Binding ConnectCommand}" />
-                <Button x:Name="DisconnectButton"
-                        Margin="0,0,8,0"
-                        Padding="16,8"
-                        Content="Disconnect"
-                        Command="{Binding DisconnectCommand}" />
-                <Button x:Name="ExitButton"
-                        Padding="16,8"
-                        Content="Exit"
-                        Command="{Binding ExitCommand}" />
-            </StackPanel>
-        </StackPanel>
+            <!-- Magic layout: start from the same template, but color/ordering can be changed here -->
+            <DataTemplate x:Key="MagicTemplate">
+                <StackPanel HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                    <TextBlock
+                        Margin="0,12,0,0"
+                        HorizontalAlignment="Center"
+                        FontSize="16"
+                        TextAlignment="Center"
+                        Text="MAGIC MODE" />
+                </StackPanel>
+            </DataTemplate>
+
+            <!-- NextVersion layout: again copy of the structure; adjust visuals for this mode -->
+            <DataTemplate x:Key="NextVersionTemplate">
+            </DataTemplate>
+        </Grid.Resources>
+
+        <!-- Show the current ShowMode in a row above the main-centered content -->
+        <!-- Use a ContentControl so we can customize text per ShowMode value while keeping a consistent visual template -->
+        <ContentControl Grid.Row="1"
+                        HorizontalAlignment="Center"
+                        Margin="0,8,0,0"
+                        Foreground="LightBlue"
+                        FontSize="18">
+            <ContentControl.Style>
+                <Style TargetType="ContentControl">
+                    <!-- Default content (falls back to enum .ToString() if no specific trigger matches) -->
+                    <Setter Property="Content" Value="{Binding ShowMode}" />
+                    <!-- Keep alignment/font settings consistent (these also apply to string content rendering) -->
+                    <Setter Property="HorizontalAlignment" Value="Center" />
+                    <Setter Property="FontSize" Value="18" />
+                    <Setter Property="Foreground" Value="LightBlue" />
+                    <Style.Triggers>
+                        <!-- Debugging mode text template -->
+                        <DataTrigger Binding="{Binding ShowMode}" Value="{x:Static common:ShowMode.Debugging}">
+                            <Setter Property="Content" Value="DEBUGGING" />
+                        </DataTrigger>
+
+                        <!-- Magic mode text template -->
+                        <DataTrigger Binding="{Binding ShowMode}" Value="{x:Static common:ShowMode.Magic}">
+                            <Setter Property="Content" Value="MAGIC" />
+                        </DataTrigger>
+
+                        <!-- NextVersion mode text template -->
+                        <DataTrigger Binding="{Binding ShowMode}" Value="{x:Static common:ShowMode.NextVersion}">
+                            <Setter Property="Content" Value="NEXT VERSION" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </ContentControl.Style>
+        </ContentControl>
+
+        <ContentControl Grid.Row="2"
+                        Content="{Binding}"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center">
+            <ContentControl.Style>
+                <Style TargetType="ContentControl">
+                    <!-- default template (fallback) -->
+                    <Setter Property="ContentTemplate" Value="{StaticResource DebuggingTemplate}" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding ShowMode}" Value="{x:Static common:ShowMode.Debugging}">
+                            <Setter Property="ContentTemplate" Value="{StaticResource DebuggingTemplate}" />
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding ShowMode}" Value="{x:Static common:ShowMode.Magic}">
+                            <Setter Property="ContentTemplate" Value="{StaticResource MagicTemplate}" />
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding ShowMode}" Value="{x:Static common:ShowMode.NextVersion}">
+                            <Setter Property="ContentTemplate" Value="{StaticResource NextVersionTemplate}" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </ContentControl.Style>
+        </ContentControl>
     </Grid>
 </mah:MetroWindow>
