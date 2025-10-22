@@ -73,7 +73,7 @@
                     Padding="10,6"
                     CornerRadius="4"
                     VerticalAlignment="Center">
-                <TextBlock Text="{Binding Clients.Count, StringFormat=Clients: {0}}"
+                <TextBlock Text="{Binding Response, StringFormat=Response: {0:N0} ms}"
                            FontWeight="SemiBold" />
             </Border>
         </Grid>
@@ -250,7 +250,7 @@
         <!-- Status Bar -->
         <StatusBar Grid.Row="3" Margin="8,0" Padding="6,2">
             <StatusBarItem>
-                <TextBlock Text="{Binding Clients.Count, StringFormat=Clients: {0}}" />
+                <TextBlock Text="{Binding Response, StringFormat=Response: {0:N0} ms}" />
             </StatusBarItem>
             <Separator />
             <StatusBarItem>

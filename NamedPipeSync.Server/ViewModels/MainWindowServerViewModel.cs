@@ -31,6 +31,7 @@ public class MainWindowServerViewModel : ViewModelBase, IDisposable
     private readonly CompositeDisposable _disposables = new();
 
     private string _title = "Server";
+    private int _response = 0;
     private readonly bool _isClientExecutableMissing;
 
     /// <summary>
@@ -222,6 +223,13 @@ public class MainWindowServerViewModel : ViewModelBase, IDisposable
     {
         get => _title;
         set => SetProperty(ref _title, value, nameof(Title));
+    }
+
+    // Response time in milliseconds (UI binding). Default is 0 for now.
+    public int Response
+    {
+        get => _response;
+        set => SetProperty(ref _response, value, nameof(Response));
     }
 
     private void OnWindowLoaded()
