@@ -31,6 +31,7 @@ public class MainWindowServerViewModel : ViewModelBase, IDisposable
     private readonly CompositeDisposable _disposables = new();
 
     private string _title = "Server";
+    private int _connectedClientsCount = 0;
     private int _response = 0;
     private readonly bool _isClientExecutableMissing;
 
@@ -71,6 +72,9 @@ public class MainWindowServerViewModel : ViewModelBase, IDisposable
                     {
                         UpsertClientState(client!);
                     }
+
+                    // Refresh connected clients count for UI
+                    ConnectedClientsCount = _model.GetCurrentlyConnectedClientIds().Count;
                 }));
 
         // Subscribe to domain events by type
@@ -166,6 +170,9 @@ public class MainWindowServerViewModel : ViewModelBase, IDisposable
             { Id = 5, Connection = ConnectionState.Connected, X = 368, Y = 528 });
         Clients.Add(new ClientWithStateBindingItem
             { Id = 6, Connection = ConnectionState.Connected, X = 688, Y = 528 });
+
+        // Set design-time connected count
+        ConnectedClientsCount = Clients.Count(c => c.Connection == ConnectionState.Connected);
     }
 
     public ObservableCollection<ClientWithStateBindingItem> Clients { get; } = new();
@@ -232,6 +239,13 @@ public class MainWindowServerViewModel : ViewModelBase, IDisposable
         set => SetProperty(ref _response, value, nameof(Response));
     }
 
+    // Number of currently connected clients (UI binding).
+    public int ConnectedClientsCount
+    {
+        get => _connectedClientsCount;
+        set => SetProperty(ref _connectedClientsCount, value, nameof(ConnectedClientsCount));
+    }
+
     private void OnWindowLoaded()
     {
         // Seed repository with clients based on available start checkpoints (players == checkpoints)
@@ -243,6 +257,9 @@ public class MainWindowServerViewModel : ViewModelBase, IDisposable
         {
             UpsertClientState(c);
         }
+
+        // Initialize connected clients count for UI
+        ConnectedClientsCount = _model.GetCurrentlyConnectedClientIds().Count;
 
         RaisePropertyChanged(nameof(CanStartAll));
 

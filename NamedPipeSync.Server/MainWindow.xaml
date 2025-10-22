@@ -73,7 +73,7 @@
                     Padding="10,6"
                     CornerRadius="4"
                     VerticalAlignment="Center">
-                <TextBlock Text="{Binding Response, StringFormat=Response: {0:N0} ms}"
+                <TextBlock Text="{Binding ConnectedClientsCount, StringFormat=Connected clients: {0}}"
                            FontWeight="SemiBold" />
             </Border>
         </Grid>
@@ -200,7 +200,7 @@
             </StackPanel>
 
             <!-- Left actions -->
-            <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
+            <StackPanel Grid.Row="1" Grid.Column="0" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
                 <Button Margin="0,0,8,0"
                         Content="Close all clients"
                         Command="{Binding CloseAllClientsCommand}"
