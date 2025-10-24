@@ -109,6 +109,31 @@ public sealed class NamedPipeServer : INamedPipeServer
         }
     }
 
+    public async Task SendConfigurationToAllAsync(Func<ClientId, ServerSendsConfigurationMessage> configurationProvider, CancellationToken ct = default)
+    {
+        var tasks = new List<Task>();
+        foreach (var clientId in _clients.Keys)
+        {
+            if (_clients.TryGetValue(clientId, out var conn))
+            {
+                try
+                {
+                    var cfg = configurationProvider(clientId);
+                    tasks.Add(conn.SendAsync(cfg, ct));
+                }
+                catch
+                {
+                    // ignore configuration send errors to avoid dropping the connection
+                }
+            }
+        }
+
+        if (tasks.Count > 0)
+        {
+            await Task.WhenAll(tasks).ConfigureAwait(false);
+        }
+    }
+
     private async Task AcceptLoopAsync(CancellationToken ct)
     {
         while (!ct.IsCancellationRequested)

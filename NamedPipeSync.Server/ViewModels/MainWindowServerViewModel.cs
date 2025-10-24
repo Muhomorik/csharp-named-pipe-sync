@@ -119,9 +119,21 @@ public class MainWindowServerViewModel : ViewModelBase, IDisposable
         // Initialize ShowMode from model
         CurrentShowMode = _model.CurrentShowMode;
 
-        SetShowModeDebuggingCommand = new DelegateCommand(() => CurrentShowMode = ShowMode.Debugging);
-        SetShowModeMagicCommand = new DelegateCommand(() => CurrentShowMode = ShowMode.Magic);
-        SetShowModeNextVersionCommand = new DelegateCommand(() => CurrentShowMode = ShowMode.NextVersion);
+        SetShowModeDebuggingCommand = new DelegateCommand(() =>
+        {
+            CurrentShowMode = ShowMode.Debugging;
+            _ = _model.SendConfigurationToAllClientsAsync();
+        });
+        SetShowModeMagicCommand = new DelegateCommand(() =>
+        {
+            CurrentShowMode = ShowMode.Magic;
+            _ = _model.SendConfigurationToAllClientsAsync();
+        });
+        SetShowModeNextVersionCommand = new DelegateCommand(() =>
+        {
+            CurrentShowMode = ShowMode.NextVersion;
+            _ = _model.SendConfigurationToAllClientsAsync();
+        });
     }
 
     /// <summary>

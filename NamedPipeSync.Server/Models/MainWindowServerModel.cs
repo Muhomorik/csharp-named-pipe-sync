@@ -249,4 +249,16 @@ public sealed class MainWindowServerModel : IMainWindowServerModel, IServerConfi
             TimestampUtc = DateTime.UtcNow
         };
     }
+
+    public async Task SendConfigurationToAllClientsAsync(CancellationToken ct = default)
+    {
+        try
+        {
+            await _server.SendConfigurationToAllAsync(BuildConfigurationFor, ct).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex);
+        }
+    }
 }

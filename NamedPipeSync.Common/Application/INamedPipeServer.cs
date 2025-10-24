@@ -113,4 +113,12 @@ public interface INamedPipeServer : IAsyncDisposable, IDisposable
     /// <param name="clientId">The target client identifier.</param>
     /// <param name="ct">Cancellation token for the send operation.</param>
     Task SendCloseRequestAsync(ClientId clientId, CancellationToken ct = default);
+
+    /// <summary>
+    ///     Sends a configuration message to all currently connected clients.
+    /// </summary>
+    /// <param name="configurationProvider">A function that builds configuration for a given client ID.</param>
+    /// <param name="ct">An optional cancellation token for the send operation.</param>
+    /// <returns>A task that completes when all configuration messages have been enqueued.</returns>
+    Task SendConfigurationToAllAsync(Func<ClientId, ServerSendsConfigurationMessage> configurationProvider, CancellationToken ct = default);
 }

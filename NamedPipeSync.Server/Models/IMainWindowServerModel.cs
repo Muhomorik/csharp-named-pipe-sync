@@ -156,4 +156,11 @@ public interface IMainWindowServerModel
     /// <param name="ct">Cancellation token to cancel the operation cooperatively.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
     Task CaptureScreenAndRestartClientsAsync(CancellationToken ct = default);
+
+    /// <summary>
+    /// Sends the current configuration to all currently connected clients.
+    /// </summary>
+    /// <param name="ct">Cancellation token to cancel the operation.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    Task SendConfigurationToAllClientsAsync(CancellationToken ct = default);
 }
