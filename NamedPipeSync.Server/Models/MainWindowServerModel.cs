@@ -34,6 +34,7 @@ public sealed class MainWindowServerModel : IMainWindowServerModel, IServerConfi
     private readonly IImageBase64Converter _imageBase64Converter;
     private readonly IWindowStateService _windowStateService;
     private readonly IScreenCaptureService _screenCaptureService;
+    private readonly IClientImageService _clientImageService;
 
     private ShowMode _currentShowMode = ShowMode.Debugging;
 
@@ -58,6 +59,7 @@ public sealed class MainWindowServerModel : IMainWindowServerModel, IServerConfi
     /// <param name="imageBase64Converter"></param>
     /// <param name="windowStateService"></param>
     /// <param name="screenCaptureService"></param>
+    /// <param name="clientImageService"></param>
     [UsedImplicitly]
     public MainWindowServerModel(
         ILogger logger,
@@ -68,7 +70,8 @@ public sealed class MainWindowServerModel : IMainWindowServerModel, IServerConfi
         ICoordinatesSendScheduler scheduler,
         IImageBase64Converter imageBase64Converter,
         IWindowStateService windowStateService,
-        IScreenCaptureService screenCaptureService)
+        IScreenCaptureService screenCaptureService,
+        IClientImageService clientImageService)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _server = server ?? throw new ArgumentNullException(nameof(server));
@@ -79,6 +82,7 @@ public sealed class MainWindowServerModel : IMainWindowServerModel, IServerConfi
         _imageBase64Converter = imageBase64Converter ?? throw new ArgumentNullException(nameof(imageBase64Converter));
         _windowStateService = windowStateService ?? throw new ArgumentNullException(nameof(windowStateService));
         _screenCaptureService = screenCaptureService ?? throw new ArgumentNullException(nameof(screenCaptureService));
+        _clientImageService = clientImageService ?? throw new ArgumentNullException(nameof(clientImageService));
     }
 
     public void StartServer() => _server.Start();
@@ -225,9 +229,13 @@ public sealed class MainWindowServerModel : IMainWindowServerModel, IServerConfi
     {
         // Prefer StartingCheckpoint from repository (authoritative per runtime state)
         Checkpoint cp;
+        string imageBase64 = string.Empty;
+        
         if (_repository.TryGet(clientId, out var client) && client is not null)
         {
             cp = client.StartingCheckpoint;
+            // Use the current image stored in the domain entity
+            imageBase64 = client.CurrentImageBase64;
         }
         else
         {
@@ -237,14 +245,15 @@ public sealed class MainWindowServerModel : IMainWindowServerModel, IServerConfi
             {
                 cp = Checkpoints.Start[0];
             }
+            // No client entity means no image available
         }
 
-        // Timestamp in UTC and latest screenshot base64 (may be empty)
+        // Timestamp in UTC and image from domain entity (may be empty)
         return new ServerSendsConfigurationMessage
         {
             ClientId = clientId.Id,
             StartingCheckpoint = cp,
-            ScreenshotBase64 = _lastScreenshotBase64 ?? string.Empty,
+            ScreenshotBase64 = imageBase64,
             ShowMode = _currentShowMode,
             TimestampUtc = DateTime.UtcNow
         };

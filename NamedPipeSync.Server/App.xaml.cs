@@ -149,6 +149,11 @@ public partial class App : Application
             .As<IImageProcessingService>()
             .SingleInstance();
 
+        // Client image management service
+        builder.RegisterType<ClientImageService>()
+            .As<IClientImageService>()
+            .SingleInstance();
+
         // Register runtime repository for clients
         builder.RegisterType<InMemoryClientWithRuntimeRepository>()
             .As<IClientWithRuntimeRepository>()

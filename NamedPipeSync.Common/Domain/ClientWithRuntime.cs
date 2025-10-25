@@ -108,6 +108,16 @@ public sealed class ClientWithRuntime
     /// </summary>
     public Checkpoint RenderCheckpoint { get; }
 
+    /// <summary>
+    ///     The Base64-encoded image currently being displayed to this client.
+    /// </summary>
+    public string CurrentImageBase64 { get; private set; } = string.Empty;
+
+    /// <summary>
+    ///     The Base64-encoded image preloaded for next display.
+    /// </summary>
+    public string PreloadedImageBase64 { get; private set; } = string.Empty;
+
     // Encapsulated state transition helpers to avoid external direct property sets
 
     /// <summary>
@@ -165,5 +175,33 @@ public sealed class ClientWithRuntime
         var idx = Math.Max(0, cps.ToList().FindIndex(cp => cp.Id == current.Id));
         var nextIdx = (idx + 1) % cps.Count;
         return cps[nextIdx];
+    }
+
+    /// <summary>
+    ///     Updates the current display image.
+    /// </summary>
+    /// <param name="base64Image">Base64-encoded PNG image. Null values are converted to empty string.</param>
+    public void SetCurrentImage(string? base64Image)
+    {
+        CurrentImageBase64 = base64Image ?? string.Empty;
+    }
+
+    /// <summary>
+    ///     Updates the preloaded image.
+    /// </summary>
+    /// <param name="base64Image">Base64-encoded PNG image. Null values are converted to empty string.</param>
+    public void SetPreloadedImage(string? base64Image)
+    {
+        PreloadedImageBase64 = base64Image ?? string.Empty;
+    }
+
+    /// <summary>
+    ///     Swaps preloaded image to current, making it the active display image.
+    ///     Clears the preloaded slot.
+    /// </summary>
+    public void PromotePreloadedToCurrent()
+    {
+        CurrentImageBase64 = PreloadedImageBase64;
+        PreloadedImageBase64 = string.Empty;
     }
 }
