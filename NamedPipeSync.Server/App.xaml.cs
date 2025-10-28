@@ -163,7 +163,7 @@ public partial class App : Application
             .As<IClientWithRuntimeEventDispatcher>()
             .SingleInstance();
 
-        builder.RegisterType<SimpleRingCoordinatesCalculator>()
+        builder.RegisterType<SquareMovementCoordinatesCalculator>()
             .As<ICoordinatesCalculator>()
             .SingleInstance();
 

@@ -4,11 +4,11 @@ using NamedPipeSync.Common.Domain.Events;
 
 namespace NamedPipeSync.Common.Application;
 
-public sealed class SimpleRingCoordinatesCalculator : ICoordinatesCalculator
+public sealed class SquareMovementCoordinatesCalculator : ICoordinatesCalculator
 {
     private readonly IClientWithRuntimeEventDispatcher _events;
 
-    public SimpleRingCoordinatesCalculator(IClientWithRuntimeEventDispatcher events)
+    public SquareMovementCoordinatesCalculator(IClientWithRuntimeEventDispatcher events)
     {
         _events = events ?? throw new ArgumentNullException(nameof(events));
     }
