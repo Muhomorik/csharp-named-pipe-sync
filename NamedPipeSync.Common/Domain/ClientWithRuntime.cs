@@ -39,6 +39,7 @@ public sealed class ClientWithRuntime
         MovingToCheckpoint = startingCheckpoint;
         _isOnCheckpoint = false;
         RenderCheckpoint = renderCheckpoint;
+        
     }
 
 

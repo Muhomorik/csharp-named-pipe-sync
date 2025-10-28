@@ -83,6 +83,39 @@ public sealed class MainWindowServerModel : IMainWindowServerModel, IServerConfi
         _windowStateService = windowStateService ?? throw new ArgumentNullException(nameof(windowStateService));
         _screenCaptureService = screenCaptureService ?? throw new ArgumentNullException(nameof(screenCaptureService));
         _clientImageService = clientImageService ?? throw new ArgumentNullException(nameof(clientImageService));
+
+        // Subscribe to CheckpointReached events and forward to handler with TODO
+        _events.Events.Subscribe(evt =>
+        {
+            if (evt is CheckpointReached cr)
+            {
+                OnCheckpointReached(cr);
+            }
+        });
+    }
+
+    // TODO: handle CheckpointReached domain events (subscription created in constructor)
+    private void OnCheckpointReached(CheckpointReached e)
+    {
+        try
+        {
+            // Resolve runtime client; if missing we can't process the event.
+            if (!_repository.TryGet(e.ClientId, out var client) || client is null)
+                return;
+
+            // Check whether the reached checkpoint is the client's configured render checkpoint.
+            var isRenderCheckpoint = client.RenderCheckpoint.Id == e.Checkpoint.Id;
+
+            if (isRenderCheckpoint)
+            {
+                // TODO: handle when reached checkpoint is the client's render checkpoint.
+                // Example: trigger image capture/update or advance scheduling.
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex);
+        }
     }
 
     public void StartServer() => _server.Start();

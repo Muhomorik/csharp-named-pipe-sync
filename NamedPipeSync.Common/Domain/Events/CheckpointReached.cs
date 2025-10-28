@@ -1,5 +1,5 @@
 ﻿using System.Diagnostics;
-using NamedPipeSync.Common.Domain;
+
 using NamedPipeSync.Common.Infrastructure.Protocol;
 
 namespace NamedPipeSync.Common.Domain.Events;
