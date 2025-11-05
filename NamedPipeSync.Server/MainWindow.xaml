@@ -40,9 +40,9 @@
         </Style>
     </mah:MetroWindow.Resources>
 
-    <dxmvvm:Interaction.Triggers>
+    <dxmvvm:Interaction.Behaviors>
         <dxmvvm:EventToCommand EventName="Loaded" Command="{Binding LoadedCommand}" />
-    </dxmvvm:Interaction.Triggers>
+    </dxmvvm:Interaction.Behaviors>
 
     <Grid>
         <Grid.RowDefinitions>
